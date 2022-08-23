@@ -228,3 +228,14 @@ sudo /bin/systemctl daemon-reload
 sudo /bin/systemctl enable grafana-server
 sudo /bin/systemctl start grafana-server
 ```
+## 5. bonus track, Install Python the Jeremy Howard way... 
+```
+wget https://raw.githubusercontent.com/fastai/fastsetup/master/setup-conda.sh
+```
+```
+chmod u+w setup-conda.sh
+```
+```
+mamba install ipython jupyterlab ipywidgets
+```
+
