@@ -106,6 +106,9 @@ sudo nano /etc/gitea/app.ini
 [metrics]
 ENABLED:true
 ```
+```
+systemctl restart gitea
+```
 ## 3. Install prometheus
 from: https://www.digitalocean.com/community/tutorials/how-to-install-prometheus-on-ubuntu-16-04 
 from: https://www.robustperception.io/shutting-down-prometheus/ 
