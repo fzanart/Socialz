@@ -1,26 +1,29 @@
 # Configuring virtual Git server on Mac M1
 
 ## 1. Virtual Machine:
-from https://www.youtube.com/watch?v=MVLbb1aMk24
+
+from: https://mac.getutm.app/gallery/ubuntu-20-04  
+from: https://www.youtube.com/watch?v=MVLbb1aMk24 
 
  1. Add virtual machine (Virtualize option on UTM)
  2. Complete initial instalation setup 
  3. Deleting USB drive w/ ISO image is important!
- 4. sudo apt install tasksel
- 5. sudo apt-get install ubuntu-desktop
- 6. sudo apt update && sudo apt upgrade -y
- 7. sudo reboot
+ ```
+ sudo apt install tasksel
+ sudo apt-get install ubuntu-desktop
+ sudo apt update && sudo apt upgrade -y
+ ```
+ 7. ```sudo reboot```
 
 Then select user and before clicl ok change from Ubunto to Ubuntu on xorg (in settings) then Ok!
 
 ## 2. Install Gitea
-from: https://docs.gitea.io/en-us/install-from-binary/
-
-from: https://linuxize.com/post/how-to-install-gitea-on-ubuntu-20-04/
+from: https://docs.gitea.io/en-us/install-from-binary/  
+from: https://linuxize.com/post/how-to-install-gitea-on-ubuntu-20-04/ 
 
 1. Downloading with wget
 ```
-wget -O gitea https://dl.gitea.io/gitea/1.16.9/gitea-1.16.9-linux-amd64
+wget -O gitea https://dl.gitea.io/gitea/1.17.1/gitea-1.17.1-linux-arm64
 chmod +x gitea
 ```
 
@@ -91,8 +94,8 @@ GITEA_WORK_DIR=/var/lib/gitea/ /usr/local/bin/gitea web -c /etc/gitea/app.ini
 ```
 
 ## 3. Install prometheus
-from https://www.digitalocean.com/community/tutorials/how-to-install-prometheus-on-ubuntu-16-04
-from: https://www.robustperception.io/shutting-down-prometheus/
+from: https://www.digitalocean.com/community/tutorials/how-to-install-prometheus-on-ubuntu-16-04 
+from: https://www.robustperception.io/shutting-down-prometheus/ 
 
 1. Copy:
 ```
@@ -158,8 +161,8 @@ sudo systemctl enable prometheus
 sudo systemctl start prometheus
 ```
 ## 4. Install Grafana:
-from https://grafana.com/grafana/download/9.1.0?edition=enterprise&pg=get&platform=arm&plcmt=selfmanaged-box1-cta1
-from https://prometheus.io/docs/visualization/grafana/
+from: https://grafana.com/grafana/download/9.1.0?edition=enterprise&pg=get&platform=arm&plcmt=selfmanaged-box1-cta1  
+from: https://prometheus.io/docs/visualization/grafana/ 
 ```
 sudo apt-get install -y adduser libfontconfig1
 wget https://dl.grafana.com/enterprise/release/grafana-enterprise_9.1.0_arm64.deb
