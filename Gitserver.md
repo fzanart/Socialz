@@ -248,7 +248,7 @@ Generate Jupyter configuration file
 ```
 jupyter notebook --generate-config
 ```
-Edit the configuration file ```~/.jupyter/jupyter_notebook_config.py``` set ```c.NotebookApp.use_redirect_file = False```
+Edit the configuration file ```sudo nano ~/.jupyter/jupyter_notebook_config.py``` set ```c.NotebookApp.use_redirect_file = False```
 
 
 
