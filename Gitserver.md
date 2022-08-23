@@ -20,11 +20,16 @@ Then select user and before clicl ok change from Ubunto to Ubuntu on xorg (in se
 ## 2. Install Gitea
 from: https://docs.gitea.io/en-us/install-from-binary/  
 from: https://linuxize.com/post/how-to-install-gitea-on-ubuntu-20-04/ 
+from: https://linuxhint.com/install-gitea-ubuntu/
 
-1. Downloading with wget
+1. First ensure you have Firefox ```firefox --version``` otherwise, install it:
+```
+sudo apt install firefox
+```
+2. Download Gitea from terminal with wget
 ```
 wget -O gitea https://dl.gitea.io/gitea/1.17.1/gitea-1.17.1-linux-arm64
-chmod +x gitea
+sudo chmod +x /usr/local/bin/gitea
 ```
 
 2. Prepare enviorment
@@ -34,7 +39,7 @@ Check with: ```git --version```
 
  - 2.2. Create a user to run Gitea:
 ```
-adduser \
+sudo adduser \
    --system \
    --shell /bin/bash \
    --gecos 'Git Version Control' \
@@ -45,12 +50,12 @@ adduser \
 ```
  - 2.3. Create required directory structure
 ```
-mkdir -p /var/lib/gitea/{custom,data,log}
-chown -R git:git /var/lib/gitea/
-chmod -R 750 /var/lib/gitea/
-mkdir /etc/gitea
-chown root:git /etc/gitea
-chmod 770 /etc/gitea
+sudo mkdir -pv /var/lib/gitea/{custom,data,log}
+sudo chown -Rv git:git /var/lib/gitea
+sudo chmod -Rv 750 /var/lib/gitea
+sudo mkdir -v /etc/gitea
+sudo chown -Rv root:git /etc/gitea
+sudo chmod -Rv 770 /etc/gitea
 ```
 3. Configure Gitea’s working directory
 ```
@@ -58,7 +63,7 @@ export GITEA_WORK_DIR=/var/lib/gitea/
 ```
 5. Copy the Gitea binary to a global location
 ```
-cp gitea /usr/local/bin/gitea
+sudo cp gitea /usr/local/bin/gitea
 ```
 7. Run Gitea as Linux service Using systemd
 ```
