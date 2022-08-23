@@ -110,7 +110,7 @@ ENABLED:true
 systemctl restart gitea
 ```
 ## 3. Install prometheus
-from: https://www.digitalocean.com/community/tutorials/how-to-install-prometheus-on-ubuntu-16-04 
+from: https://www.digitalocean.com/community/tutorials/how-to-install-prometheus-on-ubuntu-16-04  
 from: https://www.robustperception.io/shutting-down-prometheus/ 
 
 1. Copy:
@@ -126,17 +126,42 @@ sudo chown prometheus:prometheus /var/lib/prometheus
 cd ~
 curl -LO https://github.com/prometheus/prometheus/releases/download/v2.38.0/prometheus-2.38.0.linux-arm64.tar.gz
 tar xvf prometheus-2.38.0.linux-arm64.tar.gz
-sudo cp prometheus-2.0.0.linux-amd64/prometheus /usr/local/bin/
-sudo cp prometheus-2.0.0.linux-amd64/promtool /usr/local/bin/
+sudo cp prometheus-2.38.0.linux-arm64/prometheus /usr/local/bin/
+sudo cp prometheus-2.38.0.linux-arm64/promtool /usr/local/bin/
 sudo chown prometheus:prometheus /usr/local/bin/prometheus
 sudo chown prometheus:prometheus /usr/local/bin/promtool
-sudo cp -r prometheus-2.0.0.linux-amd64/consoles /etc/prometheus
-sudo cp -r prometheus-2.0.0.linux-amd64/console_libraries /etc/prometheus
+sudo cp -r prometheus-2.38.0.linux-arm64/consoles /etc/prometheus
+sudo cp -r prometheus-2.38.0.linux-arm64/console_libraries /etc/prometheus
 rm -rf prometheus-2.38.0.linux-arm64.tar.gz prometheus-2.38.0.linux-arm64
 ```
 2. Configuring prometheus
 ```
 sudo nano /etc/prometheus/prometheus.yml
+```
+```                   
+global:
+  scrape_interval: 15s 
+  evaluation_interval: 15s 
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+
+rule_files:
+
+scrape_configs:
+
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: "gitea"
+    static_configs:
+      - targets: ["localhost:3000"]
+
+```
+```
 sudo chown prometheus:prometheus /etc/prometheus/prometheus.yml
 ```
 ```
@@ -148,7 +173,7 @@ sudo -u prometheus /usr/local/bin/prometheus \
 ```
 7. Prometheus as Linux service Using systemd
 ```
-sudo nano /etc/systemd/system/prometheus.service
+ sudo nano /etc/systemd/system/prometheus.service
 ```
  - copy the following:
 ```
@@ -183,4 +208,23 @@ from: https://prometheus.io/docs/visualization/grafana/
 sudo apt-get install -y adduser libfontconfig1
 wget https://dl.grafana.com/enterprise/release/grafana-enterprise_9.1.0_arm64.deb
 sudo dpkg -i grafana-enterprise_9.1.0_arm64.deb
+```
+
+Change default http port (clashes with Gitea in 3000) remove trailing ; replace 3000 with 4000 on:
+```
+sudo nano /etc/grafana/grafana.ini
+```
+```
+sudo nano /usr/share/grafana/conf/defaults.ini
+```
+```
+sudo /usr/share/grafana/conf/sample.ini
+```
+
+Finally: 
+
+```
+sudo /bin/systemctl daemon-reload 
+sudo /bin/systemctl enable grafana-server
+sudo /bin/systemctl start grafana-server
 ```
