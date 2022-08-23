@@ -98,6 +98,14 @@ sudo systemctl start gitea
 GITEA_WORK_DIR=/var/lib/gitea/ /usr/local/bin/gitea web -c /etc/gitea/app.ini
 ```
 
+9. Enable metrics
+```
+sudo nano /etc/gitea/app.ini
+```
+```
+[metrics]
+ENABLED:true
+```
 ## 3. Install prometheus
 from: https://www.digitalocean.com/community/tutorials/how-to-install-prometheus-on-ubuntu-16-04 
 from: https://www.robustperception.io/shutting-down-prometheus/ 
