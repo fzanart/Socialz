@@ -228,14 +228,20 @@ sudo /bin/systemctl daemon-reload
 sudo /bin/systemctl enable grafana-server
 sudo /bin/systemctl start grafana-server
 ```
-## 5. bonus track, Install Python the Jeremy Howard way... 
+## 5. Install Python
 ```
-wget https://raw.githubusercontent.com/fastai/fastsetup/master/setup-conda.sh
-chmod +x setup-conda.sh
-./setup-conda.sh
+wget -qO- https://micro.mamba.pm/api/micromamba/linux-aarch64/latest | tar -xvj bin/micromamba
+./bin/micromamba shell init -s bash -p ~/micromamba
+source ~/.bashrc
 ```
 
 ```
-mamba install ipython jupyterlab ipywidgets
+micromamba activate
+micromamba install python=3.6 jupyter -c conda-forge
+```
+or create other enviorments
+```
+micromamba create -n env_name xtensor -c conda-forge
+micromamba activate env_name
 ```
 
