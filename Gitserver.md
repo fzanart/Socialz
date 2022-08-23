@@ -237,11 +237,19 @@ source ~/.bashrc
 
 ```
 micromamba activate
-micromamba install python=3.6 jupyter -c conda-forge
+micromamba install python=3.6 jupyter pandas requests matplotlib -c conda-forge
 ```
 or create other enviorments
 ```
 micromamba create -n env_name xtensor -c conda-forge
 micromamba activate env_name
 ```
+Generate Jupyter configuration file
+```
+jupyter notebook --generate-config
+```
+Edit the configuration file ```~/.jupyter/jupyter_notebook_config.py``` set ```c.NotebookApp.use_redirect_file = False```
+
+
+
 
