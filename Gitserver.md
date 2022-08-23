@@ -231,7 +231,7 @@ sudo /bin/systemctl start grafana-server
 ## 5. bonus track, Install Python the Jeremy Howard way... 
 ```
 wget https://raw.githubusercontent.com/fastai/fastsetup/master/setup-conda.sh
-sudo chmod u+w setup-conda.sh
+chmod +x setup-conda.sh
 ./setup-conda.sh
 ```
 
