@@ -250,6 +250,21 @@ jupyter notebook --generate-config
 ```
 Edit the configuration file ```sudo nano ~/.jupyter/jupyter_notebook_config.py``` set ```c.NotebookApp.use_redirect_file = False```
 
+## 6. Install Gitlab
+```
+wget --content-disposition https://packages.gitlab.com/gitlab/gitlab-ce/packages/ubuntu/focal/gitlab-ce_13.10.0-ce.0_arm64.deb/download.deb
+```
+```
+sudo dpkg -i gitlab-ce_13.10.0-ce.0_arm64.deb
+```
 
+```
+sudo EXTERNAL_URL="http://192.168.64.6" apt-get install gitlab-ce
+```
 
+```
+sudo gitlab-ctl reconfigure
+gitlab-ctl start
+```
+Go to: ```http://192.168.64.6``` and set a password. Then access using user ```root```.
 
