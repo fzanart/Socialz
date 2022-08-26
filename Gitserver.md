@@ -261,7 +261,11 @@ sudo dpkg -i gitlab-ce_13.10.0-ce.0_arm64.deb
 ```
 sudo EXTERNAL_URL="http://192.168.64.6" apt-get install gitlab-ce
 ```
-
+Edit ```sudo nano /etc/gitlab/gitlab.rb``` and add/edit the following lines:
+```
+grafana['enable'] = true
+```
+Grafana dashboard will be available on https://192.168.64.6/-/grafana after runing:
 ```
 sudo gitlab-ctl reconfigure
 gitlab-ctl start
