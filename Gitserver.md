@@ -237,7 +237,7 @@ source ~/.bashrc
 
 ```
 micromamba activate
-micromamba install python=3.6 jupyter pandas requests matplotlib -c conda-forge
+micromamba install python=3.8 jupyter pandas numpy requests matplotlib python-gitlab -c conda-forge
 ```
 or create other enviorments
 ```
