@@ -6,14 +6,14 @@ from: https://mac.getutm.app/gallery/ubuntu-20-04
 from: https://www.youtube.com/watch?v=MVLbb1aMk24 
 
  1. Add virtual machine (Virtualize option on UTM)
- 2. Complete initial instalation setup 
- 3. Deleting USB drive w/ ISO image is important!
- ```
+ 2. Complete initial instalation setup
+  ```
  sudo apt install tasksel
  sudo apt-get install ubuntu-desktop
  sudo apt update && sudo apt upgrade -y
  ```
- 7. ```sudo reboot```
+ 3. Deleting USB drive w/ ISO image is important!
+ 4. ```sudo reboot```
 
 Then select user and before clicl ok change from Ubunto to Ubuntu on xorg (in settings) then Ok!
 
