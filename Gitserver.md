@@ -255,20 +255,25 @@ Edit the configuration file ```sudo nano ~/.jupyter/jupyter_notebook_config.py``
 wget --content-disposition https://packages.gitlab.com/gitlab/gitlab-ce/packages/ubuntu/focal/gitlab-ce_13.10.0-ce.0_arm64.deb/download.deb
 ```
 ```
+sudo apt-get install -y curl openssh-server ca-certificates tzdata perl
+```
+Install postfix, but not necessary to configure it.
+```
+sudo apt-get install -y postfix
+```
+```
 sudo dpkg -i gitlab-ce_13.10.0-ce.0_arm64.deb
 ```
-
+Edit ```sudo nano /etc/gitlab/gitlab.rb``` set:
 ```
-sudo EXTERNAL_URL="http://192.168.64.6" apt-get install gitlab-ce
+external_url 'http://localhost'
 ```
-Edit ```sudo nano /etc/gitlab/gitlab.rb``` and add/edit the following lines:
-```
-grafana['enable'] = true
-```
-Grafana dashboard will be available on https://192.168.64.6/-/grafana after runing:
+Then:
 ```
 sudo gitlab-ctl reconfigure
 gitlab-ctl start
 ```
-Go to: ```http://192.168.64.6``` and set a password. Then access using user ```root```.
-
+Go to: ```http://localhost``` and set a password. Then access using user ```root```.
+Whithin root, go to 'Admin Area' - 'Settings' - 'Integrations' and enable Prometheus / Grafana.
+Go to 'Admin Area' - 'Operations' - 'Metrics' to complete Grafana integration and observe dashboards.
+Grafana dashboards will be also available on http://localhost/-/grafana.
