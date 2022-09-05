@@ -6,14 +6,14 @@ from: https://mac.getutm.app/gallery/ubuntu-20-04
 from: https://www.youtube.com/watch?v=MVLbb1aMk24 
 
  1. Add virtual machine (Virtualize option on UTM)
- 2. Complete initial instalation setup 
- 3. Deleting USB drive w/ ISO image is important!
- ```
+ 2. Complete initial instalation setup
+  ```
  sudo apt install tasksel
  sudo apt-get install ubuntu-desktop
  sudo apt update && sudo apt upgrade -y
  ```
- 7. ```sudo reboot```
+ 3. Deleting USB drive w/ ISO image is important!
+ 4. ```sudo reboot```
 
 Then select user and before clicl ok change from Ubunto to Ubuntu on xorg (in settings) then Ok!
 
@@ -237,7 +237,7 @@ source ~/.bashrc
 
 ```
 micromamba activate
-micromamba install python=3.6 jupyter pandas requests matplotlib -c conda-forge
+micromamba install python=3.8 jupyter pandas numpy requests matplotlib python-gitlab -c conda-forge
 ```
 or create other enviorments
 ```
@@ -255,16 +255,25 @@ Edit the configuration file ```sudo nano ~/.jupyter/jupyter_notebook_config.py``
 wget --content-disposition https://packages.gitlab.com/gitlab/gitlab-ce/packages/ubuntu/focal/gitlab-ce_13.10.0-ce.0_arm64.deb/download.deb
 ```
 ```
+sudo apt-get install -y curl openssh-server ca-certificates tzdata perl
+```
+Install postfix, but not necessary to configure it.
+```
+sudo apt-get install -y postfix
+```
+```
 sudo dpkg -i gitlab-ce_13.10.0-ce.0_arm64.deb
 ```
-
+Edit ```sudo nano /etc/gitlab/gitlab.rb``` set:
 ```
-sudo EXTERNAL_URL="http://192.168.64.6" apt-get install gitlab-ce
+external_url 'http://localhost'
 ```
-
+Then:
 ```
 sudo gitlab-ctl reconfigure
 gitlab-ctl start
 ```
-Go to: ```http://192.168.64.6``` and set a password. Then access using user ```root```.
-
+Go to: ```http://localhost``` and set a password. Then access using user ```root```.
+Whithin root, go to 'Admin Area' - 'Settings' - 'Integrations' and enable Prometheus / Grafana.
+Go to 'Admin Area' - 'Operations' - 'Metrics' to complete Grafana integration and observe dashboards.
+Grafana dashboards will be also available on http://localhost/-/grafana.
