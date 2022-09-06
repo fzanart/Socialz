@@ -6,13 +6,14 @@ from: https://mac.getutm.app/gallery/ubuntu-20-04
 from: https://www.youtube.com/watch?v=MVLbb1aMk24 
 
  1. Add virtual machine (Virtualize option on UTM)
- 2. Complete initial instalation setup
+ 2. Complete initial instalation setup, and reboot. If it doesn't, shut down the virtual machine, go to its preferences and ```delete USB drive w/ ISO image```
+ 3. 
   ```
  sudo apt install tasksel
  sudo apt-get install ubuntu-desktop
  sudo apt update && sudo apt upgrade -y
+ sudo apt install firefox
  ```
- 3. Deleting USB drive w/ ISO image is important!
  4. ```sudo reboot```
 
 Then select user and before clicl ok change from Ubunto to Ubuntu on xorg (in settings) then Ok!
@@ -22,11 +23,8 @@ from: https://docs.gitea.io/en-us/install-from-binary/
 from: https://linuxize.com/post/how-to-install-gitea-on-ubuntu-20-04/ 
 from: https://linuxhint.com/install-gitea-ubuntu/
 
-1. First ensure you have Firefox ```firefox --version``` otherwise, install it:
 ```
-sudo apt install firefox
-```
-2. Download Gitea from terminal with wget
+1. Download Gitea from terminal with wget
 ```
 wget -O gitea https://dl.gitea.io/gitea/1.17.1/gitea-1.17.1-linux-arm64
 sudo chmod +x /usr/local/bin/gitea
@@ -61,11 +59,11 @@ sudo chmod -Rv 770 /etc/gitea
 ```
 export GITEA_WORK_DIR=/var/lib/gitea/
 ```
-5. Copy the Gitea binary to a global location
+4. Copy the Gitea binary to a global location
 ```
 sudo cp gitea /usr/local/bin/gitea
 ```
-7. Run Gitea as Linux service Using systemd
+5. Run Gitea as Linux service Using systemd
 ```
 sudo nano /etc/systemd/system/gitea.service
 ```
@@ -93,12 +91,12 @@ sudo systemctl enable gitea
 sudo systemctl start gitea
 ```
 
-8. Running from command-line/terminal
+6. Running from command-line/terminal
 ```
 GITEA_WORK_DIR=/var/lib/gitea/ /usr/local/bin/gitea web -c /etc/gitea/app.ini
 ```
 
-9. Enable metrics
+7. Enable metrics
 ```
 sudo nano /etc/gitea/app.ini
 ```
@@ -171,7 +169,7 @@ sudo -u prometheus /usr/local/bin/prometheus \
     --web.console.templates=/etc/prometheus/consoles \
     --web.console.libraries=/etc/prometheus/console_libraries
 ```
-7. Prometheus as Linux service Using systemd
+3. Prometheus as Linux service Using systemd
 ```
  sudo nano /etc/systemd/system/prometheus.service
 ```
@@ -251,18 +249,21 @@ jupyter notebook --generate-config
 Edit the configuration file ```sudo nano ~/.jupyter/jupyter_notebook_config.py``` set ```c.NotebookApp.use_redirect_file = False```
 
 ## 6. Install Gitlab
+from: https://packages.gitlab.com/gitlab/gitlab-ce  
+from: https://lindevs.com/reset-gitlab-ce-root-password-in-linux
+
 ```
-wget --content-disposition https://packages.gitlab.com/gitlab/gitlab-ce/packages/ubuntu/focal/gitlab-ce_13.10.0-ce.0_arm64.deb/download.deb
+wget --content-disposition https://packages.gitlab.com/gitlab/gitlab-ce/packages/ubuntu/focal/gitlab-ce_15.1.6-ce.0_arm64.deb/download.deb
 ```
 ```
-sudo apt-get install -y curl openssh-server ca-certificates tzdata perl
+sudo apt-get install -y curl openssh-server ca-certificates tzdata perl libatomic1
 ```
 Install postfix, but not necessary to configure it.
 ```
 sudo apt-get install -y postfix
 ```
 ```
-sudo dpkg -i gitlab-ce_13.10.0-ce.0_arm64.deb
+sudo dpkg -i gitlab-ce_15.1.6-ce.0_arm64.deb
 ```
 Edit ```sudo nano /etc/gitlab/gitlab.rb``` set:
 ```
@@ -274,6 +275,11 @@ sudo gitlab-ctl reconfigure
 gitlab-ctl start
 ```
 Go to: ```http://localhost``` and set a password. Then access using user ```root```.
+A workaround, to reset root's password would be:
+```
+sudo gitlab-rake 'gitlab:password:reset[root]'
+```
+
 Whithin root, go to 'Admin Area' - 'Settings' - 'Integrations' and enable Prometheus / Grafana.
 Go to 'Admin Area' - 'Operations' - 'Metrics' to complete Grafana integration and observe dashboards.
 Grafana dashboards will be also available on http://localhost/-/grafana.
