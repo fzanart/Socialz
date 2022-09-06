@@ -329,7 +329,15 @@ Grafana dashboards will be also available on http://localhost/-/grafana.
    sudo gitlab-ctl start
    ```
    Then check again prometheus targets and ```'Admin Area' - 'Monitoring' - 'Health Check'```
-
+   
+8. Update using the official repositories
+   ```
+   sudo apt-get update
+   ```
+   ```
+   sudo apt-get install gitlab-ce
+   ```
+   
 References:  
 [12] https://packages.gitlab.com/gitlab/gitlab-ce  
 [13] https://lindevs.com/reset-gitlab-ce-root-password-in-linux
