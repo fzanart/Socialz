@@ -317,9 +317,18 @@ A workaround to reset root's password would be:
    sudo gitlab-rake 'gitlab:password:reset[root]'
    ```
 
-6. Whithin root, go to 'Admin Area' - 'Settings' - 'Integrations' and enable Prometheus / Grafana.
-Go to 'Admin Area' - 'Operations' - 'Metrics' to complete Grafana integration and observe dashboards.
+6. Whithin root, go to ```'Admin Area' - 'Settings' - 'Integrations'``` and enable Prometheus / Grafana.
+Go to ```'Admin Area' - 'Operations' - 'Metrics'``` to complete Grafana integration and observe dashboards.
 Grafana dashboards will be also available on http://localhost/-/grafana.
+
+7. In case Prometheus targets gets out of bounds errors, go to terminal:
+   ```
+   sudo gitlab-ctl stop
+   ```
+   ```
+   sudo gitlab-ctl start
+   ```
+   Then check again prometheus targets and ```'Admin Area' - 'Monitoring' - 'Health Check'```
 
 References:  
 [12] https://packages.gitlab.com/gitlab/gitlab-ce  
