@@ -286,11 +286,32 @@ References:
 
 ## 6. Install Gitlab:
 ----
-1. Download:
+1. Establishing a fully qualifyed domain name (FQDN) as gitserver.test.gl:
+   
+   Get your ip address:
+   ```
+   sudo hostname -I
+   ```
+   In case you whant to change the name, go to ```sudo nano /etc/hostname```
+   
+   Go to:
+   
+   ```
+   sudo nano /etc/hosts
+   ```
+   and add ```192.168.64.8 gitserver.test.gl gitserver``` below localhost (replacing 127.0.1.1 gitserver)
+   
+   verify the changes with:
+   ```
+   sudo hostname -f
+   ```
+
+2. Download GitLab:
    ```
    wget --content-disposition https://packages.gitlab.com/gitlab/gitlab-ce/packages/ubuntu/focal/gitlab-ce_15.1.6-ce.0_arm64.deb/download.deb
    ```
-2. Install dependencies
+   
+3. Install dependencies
    ```
    sudo apt-get install -y curl openssh-server ca-certificates tzdata perl libatomic1
    ```
@@ -299,29 +320,31 @@ References:
    sudo apt-get install -y postfix
    ```
    ```
-   sudo dpkg -i gitlab-ce_15.1.6-ce.0_arm64.deb
+   sudo GITLAB_ROOT_PASSWORD="<strongpassword>" EXTERNAL_URL="http://gitserver.test.gl" dpkg -i gitlab-ce_15.1.6-ce.0_arm64.deb
    ```
-3. Edit 
+   
+4. Edit 
    ```
    sudo nano /etc/gitlab/gitlab.rb
    ```
-   and set ```external_url 'http://localhost'```
-4. Then:
+   and set ```external_url 'http://gitserver.test.gl'```
+   
+5. Then:
    ```
    sudo gitlab-ctl reconfigure
    gitlab-ctl start
    ```
-5. Go to: ```http://localhost``` and set a password, then access using user ```root```.
-A workaround to reset root's password would be:
+6. Go to: ```http://gitserver.test.gl``` and set a password, then access using user ```root```.
+   A workaround to reset root's password would be:
    ```
    sudo gitlab-rake 'gitlab:password:reset[root]'
    ```
 
-6. Whithin root, go to ```'Admin Area' - 'Settings' - 'Integrations'``` and enable Prometheus / Grafana.
-Go to ```'Admin Area' - 'Operations' - 'Metrics'``` to complete Grafana integration and observe dashboards.
-Grafana dashboards will be also available on http://localhost/-/grafana.
+7. Whithin root, go to ```'Admin Area' - 'Settings' - 'Integrations'``` and enable Prometheus / Grafana.
+   Go to ```'Admin Area' - 'Operations' - 'Metrics'``` to complete Grafana integration and observe dashboards.
+   Grafana dashboards will be also available on http://gitserver.test.gl/-/grafana.
 
-7. In case Prometheus targets gets out of bounds errors, go to terminal:
+8. In case Prometheus targets gets out of bounds errors, go to terminal:
    ```
    sudo gitlab-ctl stop
    ```
@@ -330,14 +353,18 @@ Grafana dashboards will be also available on http://localhost/-/grafana.
    ```
    Then check again prometheus targets and ```'Admin Area' - 'Monitoring' - 'Health Check'```
    
-8. Update using the official repositories
+9. Update using the official repositories
    ```
    sudo apt-get update
    ```
    ```
    sudo apt-get install gitlab-ce
    ```
+   ```
+   sudo gitlab-ctl reconfigure
+   ```
    
 References:  
 [12] https://packages.gitlab.com/gitlab/gitlab-ce  
 [13] https://lindevs.com/reset-gitlab-ce-root-password-in-linux
+[14] https://gridscale.io/en/community/tutorials/hostname-fqdn-ubuntu/
