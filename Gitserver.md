@@ -261,7 +261,7 @@ References:
 
    ```
    micromamba activate
-   micromamba install python=3.8 jupyter pandas numpy requests matplotlib python-gitlab -c conda-forge
+   micromamba install python=3.8 jupyterlab jupyterlab-git networkx scipy scikit-learn pandas numpy requests matplotlib python-gitlab -c conda-forge
    ```
    or create other enviorments
    ```
@@ -286,7 +286,7 @@ References:
 
 ## 6. Install Gitlab:
 ----
-1. Establishing a fully qualifyed domain name (FQDN) as gitserver.test.gl:
+1. Establishing a fully qualifyed domain name (FQDN) as gitlab.example.com:
    
    Get your ip address:
    ```
@@ -299,7 +299,7 @@ References:
    ```
    sudo nano /etc/hosts
    ```
-   and add ```192.168.64.8 gitserver.test.gl gitserver``` below localhost (replacing 127.0.1.1 gitserver)
+   and add ```192.168.64.10 gitlab.example.com gitserver``` below localhost (replacing 127.0.1.1 gitserver)
    
    verify the changes with:
    ```
@@ -308,7 +308,7 @@ References:
 
 2. Download GitLab:
    ```
-   wget --content-disposition https://packages.gitlab.com/gitlab/gitlab-ce/packages/ubuntu/focal/gitlab-ce_15.1.6-ce.0_arm64.deb/download.deb
+   wget --content-disposition https://packages.gitlab.com/gitlab/gitlab-ce/packages/ubuntu/focal/gitlab-ce_15.3.3-ce.0_arm64.deb/download.deb
    ```
    
 3. Install dependencies
@@ -320,29 +320,30 @@ References:
    sudo apt-get install -y postfix
    ```
    ```
-   sudo GITLAB_ROOT_PASSWORD="<strongpassword>" EXTERNAL_URL="http://gitserver.test.gl" dpkg -i gitlab-ce_15.1.6-ce.0_arm64.deb
+   sudo GITLAB_ROOT_PASSWORD="<strongpassword>" EXTERNAL_URL="gitlab.example.com" dpkg -i gitlab-ce_15.3.3-ce.0_arm64.deb
    ```
    
 4. Edit 
    ```
    sudo nano /etc/gitlab/gitlab.rb
    ```
-   and set ```external_url 'http://gitserver.test.gl'```
+   and set ```external_url 'gitlab.example.com'```   
+   also set ```grafana['enable'] = true```
    
 5. Then:
    ```
    sudo gitlab-ctl reconfigure
    gitlab-ctl start
    ```
-6. Go to: ```http://gitserver.test.gl``` and set a password, then access using user ```root```.
+6. Go to: ```gitlab.example.com``` and access using user ```root``` and password.
    A workaround to reset root's password would be:
    ```
    sudo gitlab-rake 'gitlab:password:reset[root]'
    ```
 
-7. Whithin root, go to ```'Admin Area' - 'Settings' - 'Integrations'``` and enable Prometheus / Grafana.
+7. Whithin root, go to ```'Admin Area' - 'Settings' - 'Metrics and profiling'``` and enable Prometheus / Grafana.
    Go to ```'Admin Area' - 'Operations' - 'Metrics'``` to complete Grafana integration and observe dashboards.
-   Grafana dashboards will be also available on http://gitserver.test.gl/-/grafana.
+   Grafana dashboards will be also available on http://gitlab.example.com/-/grafana.
 
 8. In case Prometheus targets gets out of bounds errors, go to terminal:
    ```
@@ -351,8 +352,16 @@ References:
    ```
    sudo gitlab-ctl start
    ```
-   Then check again prometheus targets and ```'Admin Area' - 'Monitoring' - 'Health Check'```
+    Then check again prometheus targets and ```'Admin Area' - 'Monitoring' - 'Health Check'```
+    In case the error persist, you can check the logs with ```sudo gitlab-ctl tail```
    
+    ```
+    sudo gitlab-ctl restart
+    sudo su -
+    cd /var/opt/gitlab/prometheus/data
+    rm -rf 0* wal/0* wal/checkpoint.0*```
+    exit
+    ```
 9. Update using the official repositories
    ```
    sudo apt-get update
@@ -366,5 +375,5 @@ References:
    
 References:  
 [12] https://packages.gitlab.com/gitlab/gitlab-ce  
-[13] https://lindevs.com/reset-gitlab-ce-root-password-in-linux
+[13] https://lindevs.com/reset-gitlab-ce-root-password-in-linux   
 [14] https://gridscale.io/en/community/tutorials/hostname-fqdn-ubuntu/
