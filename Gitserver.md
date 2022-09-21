@@ -261,7 +261,7 @@ References:
 
    ```
    micromamba activate
-   micromamba install python=3.8 jupyterlab jupyterlab-git networkx scipy scikit-learn pandas numpy requests matplotlib python-gitlab -c conda-forge
+   micromamba install python=3.8 jupyterlab jupyterlab-git networkx scipy scikit-learn pandas numpy requests matplotlib python-gitlab tqdm -c conda-forge
    ```
    or create other enviorments
    ```
