@@ -361,9 +361,8 @@ References:
     sudo gitlab-ctl start prometheus
 
     ```
+    or   
     
-    or
-   
     ```
     sudo gitlab-ctl restart
     sudo su -
@@ -386,5 +385,5 @@ References:
 References:  
 [12] https://packages.gitlab.com/gitlab/gitlab-ce  
 [13] https://lindevs.com/reset-gitlab-ce-root-password-in-linux   
-[14] https://gridscale.io/en/community/tutorials/hostname-fqdn-ubuntu/
+[14] https://gridscale.io/en/community/tutorials/hostname-fqdn-ubuntu/   
 [15] https://gitlab.com/gitlab-org/omnibus-gitlab/-/issues/4166
