@@ -354,14 +354,24 @@ References:
    ```
     Then check again prometheus targets and ```'Admin Area' - 'Monitoring' - 'Health Check'```
     In case the error persist, you can check the logs with ```sudo gitlab-ctl tail```
+
+    ```
+    sudo gitlab-ctl stop prometheus
+    sudo rm -r /var/opt/gitlab/prometheus/data/wal
+    sudo gitlab-ctl start prometheus
+
+    ```
+    
+    or
    
     ```
     sudo gitlab-ctl restart
     sudo su -
     cd /var/opt/gitlab/prometheus/data
-    rm -rf 0* wal/0* wal/checkpoint.0*```
+    rm -rf 0* wal/0* wal/checkpoint.0*
     exit
-    ```
+    ```   
+    
 9. Update using the official repositories
    ```
    sudo apt-get update
@@ -377,3 +387,4 @@ References:
 [12] https://packages.gitlab.com/gitlab/gitlab-ce  
 [13] https://lindevs.com/reset-gitlab-ce-root-password-in-linux   
 [14] https://gridscale.io/en/community/tutorials/hostname-fqdn-ubuntu/
+[15] https://gitlab.com/gitlab-org/omnibus-gitlab/-/issues/4166
