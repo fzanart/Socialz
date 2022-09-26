@@ -359,8 +359,7 @@ References:
     sudo gitlab-ctl stop prometheus
     sudo rm -r /var/opt/gitlab/prometheus/data/wal
     sudo gitlab-ctl start prometheus
-
-    ```
+    ```   
     or   
     
     ```
