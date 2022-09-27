@@ -262,6 +262,7 @@ References:
    ```
    micromamba activate
    micromamba install python=3.8 jupyterlab jupyterlab-git networkx scipy scikit-learn pandas numpy requests matplotlib python-gitlab tqdm -c conda-forge
+   pip install prometheus-pandas
    ```
    or create other enviorments
    ```
@@ -345,15 +346,8 @@ References:
    Go to ```'Admin Area' - 'Operations' - 'Metrics'``` to complete Grafana integration and observe dashboards.
    Grafana dashboards will be also available on http://gitlab.example.com/-/grafana.
 
-8. In case Prometheus targets gets out of bounds errors, go to terminal:
-   ```
-   sudo gitlab-ctl stop
-   ```
-   ```
-   sudo gitlab-ctl start
-   ```
-    Then check again prometheus targets and ```'Admin Area' - 'Monitoring' - 'Health Check'```
-    In case the error persist, you can check the logs with ```sudo gitlab-ctl tail```
+8. In case Prometheus targets gets out of bounds errors, go to terminal and check the logs with ```sudo gitlab-ctl tail```
+   Try fixing the errors with:
 
     ```
     sudo gitlab-ctl stop prometheus
@@ -380,9 +374,20 @@ References:
    ```
    sudo gitlab-ctl reconfigure
    ```
-   
+10. Deleting data, sometimes a "ghost" user appears, to delete it:
+   ```
+   sudo gitlab-rails console
+   ```
+    
+   ```
+   user = User.find_by(username: "ghost")
+   User.delete(user.id)
+   ```   
+    If the user is removed then output would be 1, if 0 then user is not removed.
+
 References:  
 [12] https://packages.gitlab.com/gitlab/gitlab-ce  
 [13] https://lindevs.com/reset-gitlab-ce-root-password-in-linux   
 [14] https://gridscale.io/en/community/tutorials/hostname-fqdn-ubuntu/   
-[15] https://gitlab.com/gitlab-org/omnibus-gitlab/-/issues/4166
+[15] https://gitlab.com/gitlab-org/omnibus-gitlab/-/issues/4166   
+[16] https://stackoverflow.com/questions/44673257/how-to-delete-ghost-user-on-gitlab
