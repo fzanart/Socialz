@@ -391,3 +391,54 @@ References:
 [14] https://gridscale.io/en/community/tutorials/hostname-fqdn-ubuntu/   
 [15] https://gitlab.com/gitlab-org/omnibus-gitlab/-/issues/4166   
 [16] https://stackoverflow.com/questions/44673257/how-to-delete-ghost-user-on-gitlab
+
+
+## 7. Install Gitlab - Docker:
+
+1. Run:
+   ```
+   docker run \
+   --detach \
+   --restart always \
+   --name gitlab-ce \
+   --privileged \
+   --memory 4096M \
+   --publish 22:22 \
+   --publish 80:80 \
+   --publish 443:443 \
+   --env GITLAB_OMNIBUS_CONFIG="\
+   external_url 'http://localhost' \
+   nginx['redirect_http_to_https'] = true; \
+   grafana['enable'] = true" \
+   --volume /srv/gitlab-ce/conf:/etc/gitlab:z \
+   --volume /srv/gitlab-ce/logs:/var/log/gitlab:z \
+   --volume /srv/gitlab-ce/data:/var/opt/gitlab:z \
+   --network=host \
+   yrzr/gitlab-ce-arm64v8:latest
+   ```
+2. Set ```root``` password:
+   ```
+   docker exec -it gitlab-ce gitlab-rake 'gitlab:password:reset[root]'
+   ```
+3. Some helper functions in case of need to change configurations:   
+
+3.1 Docker:   
+
+   ```docker kill gitlab-ce``` # terminates the container.  
+   ```docker rm gitlab-ce``` # removes the container.  
+   ```docker ps``` # shows running containers.  
+   
+3.2 Gitlab:   
+
+   ```docker exec -it gitlab-ce editor /etc/gitlab/gitlab.rb``` # edit configurations.  
+   ```docker exec -it gitlab-ce gitlab-ctl reconfigure``` # reconfigure changes.  
+   
+3.3 Vim (To edit configurations):   
+
+   ```i```   Start insert mode at/after cursor.  
+   ```Esc```	Exit insert mode.  
+   ```dd``` 	Delete line.  
+   ```:wq```	Write (save) and quit.  
+   ```:q!```	Quit and throw away changes.  
+   ```/pattern```	Search for pattern.  
+   ```n```	 	Repeat search in same direction.  
