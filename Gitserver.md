@@ -406,16 +406,16 @@ References:
    --publish 22:22 \
    --publish 80:80 \
    --publish 443:443 \
-   --env GITLAB_OMNIBUS_CONFIG="\
-   external_url 'http://localhost' \
-   nginx['redirect_http_to_https'] = true; \
-   grafana['enable'] = true" \
+   --env GITLAB_OMNIBUS_CONFIG=" \
+     external_url 'http://localhost';
+     node_exporter['enable'] = true;
+     grafana['enable'] = true;
+     nginx['redirect_http_to_https'] = true; "\
    --volume /srv/gitlab-ce/conf:/etc/gitlab:z \
    --volume /srv/gitlab-ce/logs:/var/log/gitlab:z \
    --volume /srv/gitlab-ce/data:/var/opt/gitlab:z \
-   --network=host \
    yrzr/gitlab-ce-arm64v8:latest
-   ```
+   ```  
 2. Set ```root``` password:
    ```
    docker exec -it gitlab-ce gitlab-rake 'gitlab:password:reset[root]'
@@ -442,3 +442,12 @@ References:
    ```:q!```	Quit and throw away changes.  
    ```/pattern```	Search for pattern.  
    ```n```	 	Repeat search in same direction.  
+   
+References:  
+[17] https://docs.gitlab.com/ee/install/docker.html  
+[18] https://raspberrypi.stackexchange.com/questions/127347/how-to-run-gitlab-through-docker-on-raspberry-pi-4b-on-ubuntu-server  
+[19] https://docs.gitlab.com/ee/administration/monitoring/prometheus/gitlab_metrics.html  
+[20] https://forum.gitlab.com/t/solved-gitlab-docker-prometheus-multiproc-dir-and-metrics/9719  
+[21] https://hub.docker.com/r/yrzr/gitlab-ce-arm64v8  
+[22] https://gitlab.com/gitlab-org/omnibus-gitlab/-/issues/4917  
+[23] https://forum.gitlab.com/t/grafana-gitlab-overview-board-doesnt-work/28535/2  
