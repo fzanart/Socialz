@@ -426,10 +426,12 @@ References:
 
    ```docker kill gitlab-ce``` # terminates the container.  
    ```docker rm gitlab-ce``` # removes the container.  
+   ```sudo rm -r /srv/gitlab-ce/``` # removes data.  
    ```docker ps``` # shows running containers.  
    
 3.2 Gitlab:   
 
+   ```sudo docker logs -f gitlab``` # check logs.  
    ```docker exec -it gitlab-ce editor /etc/gitlab/gitlab.rb``` # edit configurations.  
    ```docker exec -it gitlab-ce gitlab-ctl reconfigure``` # reconfigure changes.  
    
