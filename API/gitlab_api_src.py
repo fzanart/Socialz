@@ -87,11 +87,11 @@ class gitlab_flow():
     def create_commit(self, project, branch, user_name, action='update'):
         # actions: create, delete, move, update, chmod
         commit_data = {'branch': branch,
-                    'commit_message': f'{self.title}\n{self.message}',
+                    'commit_message': f'{self.title()}\n{self.message()}',
                     'actions': [{
                     'action': action,
                     'file_path': 'README.md',
-                    'content': self.body}]}
+                    'content': self.body()}]}
         project.commits.create(commit_data, sudo=user_name)
 
     def create_watch(self, project, user):
