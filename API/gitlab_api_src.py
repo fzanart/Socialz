@@ -109,7 +109,7 @@ class gitlab_flow():
         except:
             follower_user.unfollow(sudo=user)
 
-    def create_pull_request(self, project, head_branch, base_branch, tarject_project_id, user_name, repo_owner, repo_name):
+    def create_pull_request(self, project, head_branch, base_branch, tarject_project_id, user_name):
         try:
             # Try creating pull request as it is.
             project.mergerequests.create({'source_branch':head_branch,
@@ -127,8 +127,8 @@ class gitlab_flow():
                     project.branches.create({'branch': branch_rename,'ref': 'main'}, sudo=user_name)
                     project.mergerequests.create({'source_branch':branch_rename,
                                                 'target_branch':base_branch,
-                                                'title':'Untitled',
-                                                'body':'Empty',
+                                                'title':self.title(),
+                                                'body':self.body(),
                                                 'target_project_id':tarject_project_id}, sudo=user_name)
                     break
                 except GitlabCreateError:
@@ -178,7 +178,7 @@ class gitlab_flow():
                 forked_project.branches.create({'branch': head_branch,'ref': 'main'}, sudo=user_name)
 
             # 7. Create merge request (pull request):
-            self.create_pull_request(project, head_branch, base_branch, tarject_project_id, user_name, repo_owner, repo_name)
+            self.create_pull_request(project, head_branch, base_branch, tarject_project_id, user_name)
 
         # if user_name == repo_owner, there is no need to fork
         else:
@@ -190,7 +190,7 @@ class gitlab_flow():
                 project.branches.create({'branch': head_branch,'ref': 'main'}, sudo=user_name)
 
             # 7. Create merge request (pull request):
-            self.create_pull_request(project, head_branch, base_branch, tarject_project_id, user_name, repo_owner, repo_name)
+            self.create_pull_request(project, head_branch, base_branch, tarject_project_id, user_name)
 
 
     def title(self):
