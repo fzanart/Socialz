@@ -2,7 +2,7 @@
 
 import numpy as np
 import time
-import gitlab
+from gitlab import gitlab
 import re
 import random
 from gitlab.exceptions import GitlabCreateError, GitlabGetError
