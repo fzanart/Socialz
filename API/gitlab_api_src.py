@@ -2,7 +2,7 @@
 
 import numpy as np
 import time
-from gitlab import gitlab
+from gitlab import Gitlab
 import re
 import random
 from gitlab.exceptions import GitlabCreateError, GitlabGetError
@@ -24,8 +24,7 @@ class gitlab_flow():
         self.token = token
         self.corpus = corpus
         self.max_attemps = max_attemps
-        self.gl = gitlab(self.token, self.host)
-
+        self.gl = Gitlab(url = self.host, private_token = self.token)
 
     def replace_bot_substring(self, strg):
         # Replace forbidden characters on Gitlab
