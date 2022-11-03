@@ -114,8 +114,8 @@ class gitlab_flow():
             # Try creating pull request as it is.
             project.mergerequests.create({'source_branch':head_branch,
                                       'target_branch':base_branch,
-                                      'title':'Untitled',
-                                      'body':'Empty',
+                                      'title':self.title(),
+                                      'body':self.body(),
                                       'target_project_id':tarject_project_id}, sudo=user_name)
         except GitlabCreateError:
             # Except creating pull request with max_attemps different branch names.
