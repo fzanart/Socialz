@@ -103,8 +103,8 @@ class gitlab_flow():
 
     def create_follow(self, user, user_to_follow):
         # Create a follow relaton between one user an another.
-        user = self.gl.users.list(username=user_to_follow)[0]
-        user.follow(sudo=user)
+        follower_user = self.gl.users.list(username=user_to_follow)[0]
+        follower_user.follow(sudo=user)
 
     def create_pull_request(self, project, head_branch, base_branch, tarject_project_id, user_name, repo_owner, repo_name):
         try:
