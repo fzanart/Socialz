@@ -85,7 +85,7 @@ class gitlab_flow():
             indices = [i for i, tupl in enumerate(fork_list) if tupl[0] == user_name]
             return self.gl.projects.get(id=fork_list[indices[0]][1])
 
-    def create_commit(self, project, branch, action='update'):
+    def create_commit(self, project, branch, user_name, action='update'):
         # actions: create, delete, move, update, chmod
         commit_data = {'branch': branch,
                     'commit_message': f'{self.title}\n{self.message}',
@@ -93,7 +93,7 @@ class gitlab_flow():
                     'action': action,
                     'file_path': 'README.md',
                     'content': self.body}]}
-        self.gl.projects.commits.create(commit_data)
+        project.commits.create(commit_data, sudo=user_name)
 
     def create_watch(self, project, user):
         # Star a project (repo), otherwise, unstar.
