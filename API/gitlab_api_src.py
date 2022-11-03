@@ -18,7 +18,7 @@ with open('Data/Corpus/corpus.txt') as f:
 
 
 class gitlab_flow():
-    def __init__(self, corpus, host, token, max_attemps):
+    def __init__(self, host, token, corpus=corpus, max_attemps=100):
 
         self.host = host
         self.token = token
