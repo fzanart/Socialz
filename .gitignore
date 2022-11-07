@@ -1,0 +1,12 @@
+.ipynb_checkpoints/__init__-checkpoint.py
+.ipynb_checkpoints/Frame_test_big-checkpoint.ipynb
+.ipynb_checkpoints/Frame-checkpoint.ipynb
+API/__pycache__/gitlab_api_src.cpython-38.pyc
+API/__pycache__/glAPIscr.cpython-38.pyc
+API/.ipynb_checkpoints/api_test-checkpoint.ipynb
+**/*.py
+API/.ipynb_checkpoints/gitlab_api-checkpoint.ipynb
+Data/Corpus/.ipynb_checkpoints/random_corpus-checkpoint.ipynb
+API/all_cobol_events_2011_2021.json
+.ipynb_checkpoints/ESData-checkpoint.ipynb
+API/__pycache__/__init__.cpython-38.pyc
