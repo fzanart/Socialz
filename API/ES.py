@@ -46,7 +46,7 @@ class evolutionary_strategy():
         
         # Build the adjacency matrix for user - repo (and repo - user) interactions.
         
-        adj_matrix = pd.crosstab(self.edge_list['source'], self.edge_list['target']).astype(float)
+        adj_matrix = pd.crosstab(edge_list['source'], edge_list['target']).astype(float)
         idx = adj_matrix.columns.union(adj_matrix.index)
         adj_matrix = adj_matrix.reindex(index = idx, columns=idx, fill_value=0.0) 
         adj_matrix.loc[self.users, self.users] = self.user_user_similarity(adj_matrix)
