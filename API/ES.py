@@ -8,6 +8,7 @@ from tqdm import tqdm
 import random
 #from multiprocessing.pool import ThreadPool
 from multiprocessing import Pool
+from itertools import combinations
 
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO, datefmt='%d-%b-%y %H:%M:%S')
 
@@ -20,6 +21,24 @@ class evolutionary_strategy():
         self.cpus = cpus
         #self.pool = ThreadPool(cpus)
         self.pool = Pool(self.cpus)
+        self.event_types = edge_list['type'].unique()
+        self.combinations = self.get_combinations()
+
+    def get_combinations(self):
+        # create all posible combination of events (type)
+        # 1. Get the event types and the number of them.
+        n = len(self.event_types)
+        # 2. Evaluate all the possible combinations
+        event_comb = []
+        for i in range(1,n+1):
+            comb = combinations(self.event_types,i)
+            event_comb.extend(list(comb))
+        # 3. Map, in a dict, a value to each (sorted names on) tuples (combinations)
+        comb_dict = {}
+        for event, value in zip(event_comb, list(range(1,len(event_comb)+1))):
+            comb_dict[tuple(sorted(event))] = value
+
+        return comb_dict
 
     def user_user_similarity(self, adj_matrix):
     
@@ -42,27 +61,45 @@ class evolutionary_strategy():
 
         return user_user
     
-    def create_adjacency_matrix(self, edge_list):
+    def complete_edgelist(self, edge_list):
+        # Add user-user FollowEvents based on cosine similarity
         
+        # Remove followEvent if exists on the edge_list
+        if (edge_list['type'].eq('FollowEvent')).any():
+            edge_list = edge_list[~edge_list['type'].isin(['FollowEvent'])].reset_index(drop=True)
+
         # Build the adjacency matrix for user - repo (and repo - user) interactions.
-        
         adj_matrix = pd.crosstab(edge_list['source'], edge_list['target']).astype(float)
         idx = adj_matrix.columns.union(adj_matrix.index)
         adj_matrix = adj_matrix.reindex(index = idx, columns=idx, fill_value=0.0) 
         adj_matrix.loc[self.users, self.users] = self.user_user_similarity(adj_matrix)
         
-        return adj_matrix
+        # Create edge list from user-user similarity:
+        user_user = adj_matrix.loc[self.users, self.users]
+        G = nx.from_pandas_adjacency(user_user, create_using=nx.DiGraph())
+        user_user = nx.to_pandas_edgelist(G)
+        user_user['type'] = 'FollowEvent'
+        user_user = user_user.drop(columns='weight')
+
+        # Append user_user edge list to edge_list:
+        edge_list = pd.concat([edge_list, user_user], ignore_index=True, axis=0)
+        
+        return edge_list
 
     def mutate(self, edge_list, node):
 
-        # Create copy of edge_lis:
-        el = edge_list.copy()
+        # Remove existing followEvent on the edge_list, and/or create a copy
+        if (edge_list['type'].eq('FollowEvent')).any():
+            el = edge_list[~edge_list['type'].isin(['FollowEvent'])].reset_index(drop=True).copy()
+        else:
+            # Create copy of edge_lis:
+            el = edge_list.copy()
 
         # Create 1 to 10 random new edges and add them to the edge list.
         add = random.randint(1, 10)
 
         for _ in range(add): 
-            new_edge_user_repo = pd.DataFrame({'source':[node], 'target':[random.choice(self.repos)]})
+            new_edge_user_repo = pd.DataFrame({'source':[node], 'target':[random.choice(self.repos)], 'type':[random.choice(self.event_types)]})
             el = pd.concat([el, new_edge_user_repo], ignore_index=True, axis=0)
         
         # Else, delete 1 to 5 edges if random == 0 with 25% prob.
@@ -78,17 +115,35 @@ class evolutionary_strategy():
             
             el = aux_el
 
+        # Add follow events to the new edge list
+        el = self.complete_edgelist(el)
+
         return el
+    
+    def map_combinations(self, edge_list):
+        
+        # Map the corresponding value for each user involved on each combination of events.
+        map_values = []
+        for user in self.users:
+            aux = edge_list[edge_list['source']==user]
+            if (aux['type'].eq('FollowEvent')).any():
+                aux = aux[~aux['type'].isin(['FollowEvent'])]
+            events = tuple(sorted(aux['type'].unique()))
+            map_values.append(self.combinations[events])
+
+        return pd.DataFrame({'Users':self.users, 'Values':map_values}).set_index('Users')
 
     def graph_metrics(self, edge_list):
-    
+
         # Evaluate Degree and Eigenvector centralities for each node in a Graph
-        G = nx.from_pandas_adjacency(self.create_adjacency_matrix(edge_list), create_using=nx.DiGraph)
+        G = nx.from_pandas_edgelist(self.complete_edgelist(edge_list), create_using=nx.DiGraph)
         
         result = pd.DataFrame({'Centrality': nx.pagerank(G), 'Degree': {node:val for (node, val) in G.degree()}})
 
-        # filter users
+        # filter users, concatenate with mapped values
         result = result[result.index.str.startswith('u: ')]
+        mapped_values = self.map_combinations(edge_list)
+        result = pd.concat([result, mapped_values], axis=1, ignore_index=False)
         
         # Scale values
         for column in result:
