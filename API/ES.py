@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 from scipy.stats import qmc
 from tqdm import tqdm
 import random
-#from multiprocessing.pool import ThreadPool
 from multiprocessing import Pool
 from itertools import combinations
 
@@ -19,7 +18,6 @@ class evolutionary_strategy():
         self.users = edge_list['source'].unique().tolist()
         self.repos = edge_list['target'].unique().tolist()
         self.cpus = cpus
-        #self.pool = ThreadPool(cpus)
         self.pool = Pool(self.cpus)
         self.event_types = edge_list['type'].unique()
         self.combinations = self.get_combinations()
@@ -86,7 +84,14 @@ class evolutionary_strategy():
         
         return edge_list
 
-    def mutate(self, edge_list, node):
+    def mutate(self, edge_list, sample):
+        # divide sample into the number of edges to add/remove
+        aux_1 = np.random.randint(0,sample+1)
+        aux_2 = sample - aux_1
+        add_node, delete_node = max(aux_1, aux_2), min(aux_1, aux_2)
+        logging.debug(f'adding: {add_node}, deleting: {delete_node}')
+        # select a node to alter
+        node = np.random.choice(self.users)
 
         # Remove existing followEvent on the edge_list, and/or create a copy
         if (edge_list['type'].eq('FollowEvent')).any():
@@ -95,22 +100,19 @@ class evolutionary_strategy():
             # Create copy of edge_lis:
             el = edge_list.copy()
 
-        # Create 1 to 10 random new edges and add them to the edge list.
-        add = random.randint(1, 10)
-
-        for _ in range(add): 
+        # Create random new edges and add them to the edge list.
+        for _ in range(add_node): 
             new_edge_user_repo = pd.DataFrame({'source':[node], 'target':[random.choice(self.repos)], 'type':[random.choice(self.event_types)]})
             el = pd.concat([el, new_edge_user_repo], ignore_index=True, axis=0)
         
-        # Else, delete 1 to 5 edges if random == 0 with 25% prob.
-        if np.random.choice([0,1], p=[0.25,0.75]) == 0:
-            remove = np.random.choice([1,2,3,4,5])
-            
+        # Delete edges if delete_node > 0:
+        if delete_node > 0:
             aux_el = None
             # Check that removing edges dont remove users or repos.
+            logging.debug(f'entering while condition: ...')
             while aux_el is None or not len(aux_el['source'].unique()) == len(self.users) or not len(aux_el['target'].unique()) == len(self.repos):
             
-                drop_idxs = np.random.choice(el.index, remove, replace=False)
+                drop_idxs = np.random.choice(el.index, delete_node, replace=False)
                 aux_el = el.drop(drop_idxs).reset_index(drop=True)
             
             el = aux_el
@@ -156,10 +158,12 @@ class evolutionary_strategy():
         # Evaluate metrics in terms of star-discrepancy
         return qmc.discrepancy(candidate, method='L2-star',workers=-1)
 
-    def es_plus(self, n_iter, mu, lam, progress_bar=True):
+    def es_plus(self, n_iter, mu, lam, A = 2, b = 0.5, progress_bar=True):
         logging.debug('evolutionary strategy begins...')
         
         best, best_eval = None, 1e+10
+        n = self.edge_list.shape[0]
+        prob = 1/n
         
         # calculate the number of children per parent
         n_children = int(lam / mu)
@@ -173,8 +177,11 @@ class evolutionary_strategy():
 
         # perform the search
         for epoch in tqdm(range(n_iter), disable=progress_bar):
+            # sample from binomial distribution > 0
+            if prob > 1: prob = 1 # set upper bound
+            sample = np.random.binomial(n, prob)
+            if sample < 1: sample = 1 # set lower bound           
             # evaluate the fitness for the population
-            #scores = [self.objective(candidate) for candidate in population]
             scores = self.pool.map(self.objective, population)
             # rank scores in ascending order
             ranks = np.argsort(np.argsort(scores))
@@ -184,21 +191,21 @@ class evolutionary_strategy():
             offspring = list()
             for i in selected:
             # check if this parent is the best solution ever seen
+                count = 0 # add a counter of successful candidates
                 if scores[i] < best_eval:
                     best, best_eval, niter = population[i], scores[i], epoch
-                    logging.info('n_iter: %d, score: %.5f' % (epoch, best_eval))
-            
+                    count += 1
+                    logging.info(f'n_iter: {epoch}, score: {best_eval:.5f}, sample_size: {sample}')
                 # keep the parent
                 offspring.append(population[i])
-
                 # create offspring for parent
-                for j in range(n_children):
-                    sample = np.random.choice(self.users)
+                for _ in range(n_children):
                     child = self.mutate(population[i], sample)
                     offspring.append(child)
-
             # replace population with children
             population = offspring
+            if count > 0: prob = prob*A #increase success prob when successful candidates were encountered
+            else: prob = prob*b # decrease prob.
         logging.debug('evolutionary strategy ended')
         return niter, best, best_eval
 
