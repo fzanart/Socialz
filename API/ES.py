@@ -8,6 +8,7 @@ from tqdm import tqdm
 import random
 from multiprocessing import Pool
 from itertools import combinations
+from datetime import datetime, timedelta
 
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO, datefmt='%d-%b-%y %H:%M:%S')
 
@@ -23,6 +24,7 @@ class evolutionary_strategy():
         self.combinations = self.get_combinations()
 
     def get_combinations(self):
+        start_time = datetime.now()
         # create all posible combination of events (type)
         # 1. Get the event types and the number of them.
         n = len(self.event_types)
@@ -35,11 +37,12 @@ class evolutionary_strategy():
         comb_dict = {}
         for event, value in zip(event_comb, list(range(1,len(event_comb)+1))):
             comb_dict[tuple(sorted(event))] = value
-
+        end_time = datetime.now()
+        logging.debug(f'def: get_combinations, elapsed_time: {str(timedelta(seconds=(end_time - start_time).seconds))}')
         return comb_dict
 
     def user_user_similarity(self, adj_matrix):
-    
+        start_time = datetime.now()
         # Evaluate user-user similarity:
         
         ## Get repo - user similarity (upper-right square):
@@ -56,10 +59,21 @@ class evolutionary_strategy():
 
         # Combine upper and lower triangles, keep 0 in the diagonal.
         user_user = np.triu(repo_user,1) + np.tril(user_repo,-1)
-
+        end_time = datetime.now()
+        logging.debug(f'def: user_user_similarity, elapsed_time: {str(timedelta(seconds=(end_time - start_time).seconds))}')
         return user_user
+
+    def adjmatrix_to_edgelist(self, adj_matrix):
+        #Transform an adjacency matrix to edge list
+        adj_matrix.index.name = 'source'
+        return adj_matrix.reset_index()\
+        .melt('source', value_name='weight', var_name='target')\
+        .query('source != target & weight > 0')\
+        .reset_index(drop=True)
+    
     
     def complete_edgelist(self, edge_list):
+        start_time = datetime.now()
         # Add user-user FollowEvents based on cosine similarity
         
         # Remove followEvent if exists on the edge_list
@@ -74,22 +88,24 @@ class evolutionary_strategy():
         
         # Create edge list from user-user similarity:
         user_user = adj_matrix.loc[self.users, self.users]
-        G = nx.from_pandas_adjacency(user_user, create_using=nx.DiGraph())
-        user_user = nx.to_pandas_edgelist(G)
+        user_user = self.adjmatrix_to_edgelist(user_user)
         user_user['type'] = 'FollowEvent'
         user_user = user_user.drop(columns='weight')
 
         # Append user_user edge list to edge_list:
         edge_list = pd.concat([edge_list, user_user], ignore_index=True, axis=0)
         
+        end_time = datetime.now()
+        logging.debug(f'def: complete_edgelist, elapsed_time: {str(timedelta(seconds=(end_time - start_time).seconds))}')
         return edge_list
 
     def mutate(self, edge_list, sample):
+        start_time = datetime.now()
         # divide sample into the number of edges to add/remove
         aux_1 = np.random.randint(0,sample+1)
         aux_2 = sample - aux_1
         add_node, delete_node = max(aux_1, aux_2), min(aux_1, aux_2)
-        logging.debug(f'adding: {add_node}, deleting: {delete_node}')
+#        logging.debug(f'adding: {add_node}, deleting: {delete_node}')
         # select a node to alter
         node = np.random.choice(self.users)
 
@@ -109,7 +125,7 @@ class evolutionary_strategy():
         if delete_node > 0:
             aux_el = None
             # Check that removing edges dont remove users or repos.
-            logging.debug(f'entering while condition: ...')
+   #         logging.debug(f'entering while condition: ...')
             while aux_el is None or not len(aux_el['source'].unique()) == len(self.users) or not len(aux_el['target'].unique()) == len(self.repos):
             
                 drop_idxs = np.random.choice(el.index, delete_node, replace=False)
@@ -120,23 +136,22 @@ class evolutionary_strategy():
         # Add follow events to the new edge list
         el = self.complete_edgelist(el)
 
+        end_time = datetime.now()
+        logging.debug(f'def: mutate, elapsed_time: {str(timedelta(seconds=(end_time - start_time).seconds))}')
         return el
-    
-    def map_combinations(self, edge_list):
-        
-        # Map the corresponding value for each user involved on each combination of events.
-        map_values = []
-        for user in self.users:
-            aux = edge_list[edge_list['source']==user]
-            if (aux['type'].eq('FollowEvent')).any():
-                aux = aux[~aux['type'].isin(['FollowEvent'])]
-            events = tuple(sorted(aux['type'].unique()))
-            map_values.append(self.combinations[events])
 
-        return pd.DataFrame({'Users':self.users, 'Values':map_values}).set_index('Users')
+    def map_combinations(self, edge_list):
+        start_time = datetime.now()
+        # Group all events of a user. Then, map the corresponding value for each combination.
+        edge_list = edge_list[~edge_list['type'].isin(['FollowEvent'])]
+        map_values = edge_list[['source','type']].groupby('source').apply(lambda x: self.combinations.get(tuple(sorted(x['type'].unique()))))
+        
+        end_time = datetime.now()
+        logging.debug(f'def: map_combinations, elapsed_time: {str(timedelta(seconds=(end_time - start_time).seconds))}')
+        return map_values
 
     def graph_metrics(self, edge_list):
-
+        start_time = datetime.now()
         # Evaluate Degree and Eigenvector centralities for each node in a Graph
         G = nx.from_pandas_edgelist(self.complete_edgelist(edge_list), create_using=nx.DiGraph)
         
@@ -145,21 +160,27 @@ class evolutionary_strategy():
         # filter users, concatenate with mapped values
         result = result[result.index.str.startswith('u: ')]
         mapped_values = self.map_combinations(edge_list)
-        result = pd.concat([result, mapped_values], axis=1, ignore_index=False)
+        result = pd.concat([result, mapped_values], axis=1, ignore_index=False).rename(columns={0:'Values'})
         
         # Scale values
-        for column in result:
-            result[column] = result[column].apply(lambda x: (x - result[column].min())/(result[column].max() - result[column].min()))
+        result = result.apply(lambda x:(x.astype(float) - min(x))/(max(x)-min(x)), axis = 0)
 
+        end_time = datetime.now()
+        logging.debug(f'def: graph_metrics, elapsed_time: {str(timedelta(seconds=(end_time - start_time).seconds))}')
         return result
 
     def objective(self, candidate):  
+        start_time = datetime.now()
         candidate = self.graph_metrics(candidate)
         # Evaluate metrics in terms of star-discrepancy
-        return qmc.discrepancy(candidate, method='L2-star',workers=-1)
+        evaluation = qmc.discrepancy(candidate, method='L2-star',workers=-1)
+        end_time = datetime.now()
+        logging.debug(f'def: objective, elapsed_time: {str(timedelta(seconds=(end_time - start_time).seconds))}')
+        return evaluation
 
     def es_plus(self, n_iter, mu, lam, A = 2, b = 0.5, progress_bar=True):
-        logging.debug('evolutionary strategy begins...')
+        start_time = datetime.now()
+        logging.debug(f'def: es_plus, start_time: {start_time:%Y-%m-%d %H:%M}')
         
         best, best_eval = None, 1e+10
         n = self.edge_list.shape[0]
@@ -185,6 +206,7 @@ class evolutionary_strategy():
             scores = self.pool.map(self.objective, population)
             # rank scores in ascending order
             ranks = np.argsort(np.argsort(scores))
+#            logging.debug(f'n_iter: {epoch}, score: {np.sort(scores)[0]:.5f}, sample_size: {sample}')
             # select the indexes for the top mu ranked solutions, drop the worse results
             selected = [i for i,_ in enumerate(ranks) if ranks[i] < mu]
             # create offspring from parents
@@ -206,7 +228,8 @@ class evolutionary_strategy():
             population = offspring
             if count > 0: prob = prob*A #increase success prob when successful candidates were encountered
             else: prob = prob*b # decrease prob.
-        logging.debug('evolutionary strategy ended')
+        end_time = datetime.now()
+        logging.debug(f'def: es_plus, elapsed_time: {str(timedelta(seconds=(end_time - start_time).seconds))}')
         return niter, best, best_eval
 
     # Without the following two formulas, you get NotImplementedError 
