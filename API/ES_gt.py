@@ -1,8 +1,7 @@
 import logging
 import pandas as pd
 import numpy as np
-import networkx as nx
-import matplotlib.pyplot as plt
+import graph_tool.all as gt
 from scipy.stats import qmc
 from tqdm import tqdm
 import random
@@ -19,10 +18,10 @@ import time
         #     logger_handler.setFormatter(logging.Formatter('{%(message)s}'))
 
 
-logging.basicConfig(filename='logfile.log',
+logging.basicConfig(filename='logfile_gt.log',
                     filemode='a', #append rather than overwrite
                     datefmt='%H:%M:%S,uuu',#'%d-%b-%y %H:%M:%S',
-                    level=logging.DEBUG,
+                    level=logging.INFO,
                     format='{%(message)s},')
                     # format='%(asctime)s - %(message)s')
 
@@ -35,7 +34,7 @@ class evolutionary_strategy():
         self.repos = edge_list['target'].unique().tolist()
         self.cpus = cpus
         self.pool = Pool(self.cpus)
-        self.event_types = edge_list['type'].unique()
+        self.event_types = edge_list['type'].unique().tolist()
         self.combinations = self.get_combinations()
 
     def get_combinations(self):
@@ -124,16 +123,14 @@ class evolutionary_strategy():
         aux_1 = np.random.randint(0,sample+1)
         aux_2 = sample - aux_1
         add_node, delete_node = max(aux_1, aux_2), min(aux_1, aux_2)
-        # select a node to alter
-        node = np.random.choice(self.users)
 
         # Remove existing followEvent on the edge_list, and/or create a copy
         el = edge_list.loc[edge_list['type'] != 'FollowEvent'].reset_index(drop=True).copy()
-
+        # Choose a random node:
+        rnd_node = random.choice(self.users)
         # Create random new edges and add them to the edge list.
-        for _ in range(add_node): 
-            new_edge_user_repo = pd.DataFrame({'source':[node], 'target':[random.choice(self.repos)], 'type':[random.choice(self.event_types)]})
-            el = pd.concat([el, new_edge_user_repo], ignore_index=True, axis=0)
+        d = [{'source':rnd_node, 'target':random.choice(self.repos), 'type':random.choice(self.event_types)} for _ in range(add_node)]
+        el = pd.concat([el, pd.DataFrame(d)], ignore_index=True, axis=0)
 
         # Delete edges if delete_node > 0:
         if delete_node > 0:
@@ -141,12 +138,13 @@ class evolutionary_strategy():
             # Check that removing edges dont remove users or repos.
             timeout = time.time() + 60*2 # 2 minutes from now, max.
             while aux_el is None or not len(aux_el['source'].unique()) == len(self.users) or not len(aux_el['target'].unique()) == len(self.repos):
-                if time.time() > timeout:
+                if time.time() > timeout or delete_node == 0:
                     logging.warning(f'Delete nodes time exceeded, adding: {add_node}, deleting: {delete_node}')
                     aux_el = el
                     break
                 drop_idxs = np.random.choice(el.index, delete_node, replace=False)
                 aux_el = el.drop(drop_idxs).reset_index(drop=True)
+                delete_node -= 1 # shrink delete_node to find combination easily.
             
             el = aux_el
 
@@ -161,6 +159,7 @@ class evolutionary_strategy():
         start_time = datetime.now()
         # Remove followEvent (The assumption is that all users have them) Group all events of a user. Then, map the corresponding value for each combination.
         edge_list = edge_list.loc[edge_list['type'] != 'FollowEvent'].reset_index(drop=True)
+        #TODO: map combinations using map https://stackoverflow.com/questions/24216425/adding-a-new-pandas-column-with-mapped-value-from-a-dictionary
         map_values = edge_list[['source','type']].groupby('source').apply(lambda x: self.combinations.get(tuple(sorted(x['type'].unique()))))
         
         end_time = datetime.now()
@@ -169,11 +168,14 @@ class evolutionary_strategy():
 
     def graph_metrics(self, edge_list):
         start_time = datetime.now()
-        # Evaluate Degree and Eigenvector centralities for each node in a Graph
-        G = nx.from_pandas_edgelist(self.complete_edgelist(edge_list), create_using=nx.DiGraph)
-        
-        result = pd.DataFrame({'Centrality': nx.pagerank(G), 'Degree': {node:val for (node, val) in G.degree()}})
-
+        # Evaluate Degree and Pagerank centralities for each node in a Graph
+        G = gt.Graph(directed=True)
+        vertices = self.complete_edgelist(edge_list)
+        vertices = G.add_edge_list(vertices[['source', 'target']].to_numpy(), hashed=True)
+        ranks = gt.pagerank(G)
+        d = [{'vertices':name, 'pagerank':ranks[vertex], 'degree':vertex.out_degree()+vertex.in_degree()} for vertex, name in zip(G.vertices(), vertices)]
+        result = pd.DataFrame(d).set_index('vertices')
+ 
         # filter users, concatenate with mapped values
         result = result[result.index.str.startswith('u: ')]
         mapped_values = self.map_combinations(edge_list)
@@ -195,7 +197,7 @@ class evolutionary_strategy():
         logging.debug(f'"def":"objective", "elapsed_time":"{str(timedelta(microseconds=(end_time - start_time).microseconds))}", "iter":"{self.iter_n}"')
         return evaluation
 
-    def es_plus(self, n_iter, mu, lam, A = 2, b = 0.5, disable_progress_bar=True):
+    def es_plus(self, n_iter, mu, lam, A = 2, b = 0.5, disable_progress_bar=False):
         start_time = datetime.now()
         logging.info(f'ES({mu} + {lam}), start_time: {start_time:%Y-%m-%d %H:%M}')
         
@@ -214,13 +216,13 @@ class evolutionary_strategy():
 
         # perform the search
         for epoch in (pbar := tqdm(range(n_iter), disable=disable_progress_bar)):
-            pbar.set_description(f'best score: {best_eval:.5f}, progress')
             # change iteration number (iter_n) for logging purposes.
             self.iter_n = epoch
             # sample from binomial distribution > 0
             if prob > 1: prob = 1 # set upper bound
             sample = np.random.binomial(n, prob)
-            if sample < 1: sample = 1 # set lower bound           
+            if sample < 1: sample = 1 # set lower bound
+            pbar.set_description(f'best score: {best_eval:.5f}, step_size: {sample}, progress')           
             # evaluate the fitness for the population
             scores = self.pool.map(self.objective, population)
             # rank scores in ascending order
@@ -261,3 +263,5 @@ class evolutionary_strategy():
 
     def __setstate__(self, state):
         self.__dict__.update(state)
+
+# %%

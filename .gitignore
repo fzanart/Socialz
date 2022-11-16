@@ -2,3 +2,8 @@
 *.pyc
 API/all_cobol_events_2011_2021.json
 Paper/Introduction.docx
+*.log
+logfile.json
+Untitled-1.ipynb
+Untitled.txt
+Untitled2.txt
