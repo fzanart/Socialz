@@ -395,8 +395,8 @@ References:
 
 ## 7. Install Gitlab - Docker:
 
-1. Run:
-   ```
+1. Run:   
+```
 docker run \
   --detach \
   --restart always \
@@ -416,7 +416,7 @@ docker run \
   --volume /srv/gitlab-ce/logs:/var/log/gitlab:z \
   --volume /srv/gitlab-ce/data:/var/opt/gitlab:z \
   yrzr/gitlab-ce-arm64v8:latest
-   ```  
+```  
 2. Set ```root``` password:
    ```
    docker exec -it gitlab-ce gitlab-rake 'gitlab:password:reset[root]'
