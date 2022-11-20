@@ -395,27 +395,28 @@ References:
 
 ## 7. Install Gitlab - Docker:
 
-1. Run:
-   ```
-   docker run \
-   --detach \
-   --restart always \
-   --name gitlab-ce \
-   --privileged \
-   --memory 4096M \
-   --publish 22:22 \
-   --publish 80:80 \
-   --publish 443:443 \
-   --env GITLAB_OMNIBUS_CONFIG=" \
-     external_url 'http://localhost';
-     node_exporter['enable'] = true;
-     grafana['enable'] = true;
-     nginx['redirect_http_to_https'] = true; "\
-   --volume /srv/gitlab-ce/conf:/etc/gitlab:z \
-   --volume /srv/gitlab-ce/logs:/var/log/gitlab:z \
-   --volume /srv/gitlab-ce/data:/var/opt/gitlab:z \
-   yrzr/gitlab-ce-arm64v8:latest
-   ```  
+1. Run:   
+```
+docker run \
+  --detach \
+  --restart always \
+  --name gitlab-ce \
+  --privileged \
+  --memory 4096M \
+  --publish 22:22 \
+  --publish 80:80 \
+  --publish 443:443 \
+  --publish 9090:9090 \
+  --env GITLAB_OMNIBUS_CONFIG=" \
+    external_url 'http://localhost';
+    node_exporter['enable'] = true;
+    grafana['enable'] = true;
+    nginx['redirect_http_to_https'] = true; "\
+  --volume /srv/gitlab-ce/conf:/etc/gitlab:z \
+  --volume /srv/gitlab-ce/logs:/var/log/gitlab:z \
+  --volume /srv/gitlab-ce/data:/var/opt/gitlab:z \
+  yrzr/gitlab-ce-arm64v8:latest
+```  
 2. Set ```root``` password:
    ```
    docker exec -it gitlab-ce gitlab-rake 'gitlab:password:reset[root]'
