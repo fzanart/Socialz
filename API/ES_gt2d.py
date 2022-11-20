@@ -12,9 +12,9 @@ import time
 logging.basicConfig(filename='logfile_gt.log',
                     filemode='a', #append rather than overwrite
                     datefmt='%H:%M:%S,uuu',#'%d-%b-%y %H:%M:%S',
-                    level=logging.INFO,
+                    level=logging.DEBUG,
                     format='{%(message)s},')
-class evolutionary_strategy():
+class evolutionary_strategy_2d():
 
     def __init__(self, edge_list, cpus=4, debug_mode=False):
         self.iter_n = 0
@@ -24,25 +24,8 @@ class evolutionary_strategy():
         self.cpus = cpus
         self.pool = Pool(self.cpus)
         self.event_types = edge_list['type'].unique().tolist()
-        self.combinations = self.get_combinations()
 
-    def get_combinations(self):
-        st = time.time()
-        # create all posible combination of events (type)
-        # 1. Get the event types and the number of them.
-        n = len(self.event_types)
-        # 2. Evaluate all the possible combinations
-        event_comb = []
-        for i in range(1,n+1):
-            comb = combinations(self.event_types,i)
-            event_comb.extend(list(comb))
-        # 3. Map, in a dict, a value to each (sorted names on) tuples (combinations)
-        comb_dict = {}
-        for event, value in zip(event_comb, list(range(1,len(event_comb)+1))):
-            comb_dict[tuple(sorted(event))] = value
-        et = time.time()
-        logging.debug(f'"def":"get_combinations", "elapsed_time":"{et-st}", "iter":"{self.iter_n}"')
-        return comb_dict
+
 
     def user_user_similarity(self, adj_matrix):
         st = time.time()
@@ -122,7 +105,7 @@ class evolutionary_strategy():
             timeout = time.time() + 60*2 # 2 minutes from now, max.
             while aux_el is None or not len(aux_el['source'].unique()) == len(self.users) or not len(aux_el['target'].unique()) == len(self.repos):
                 if time.time() > timeout or delete_node == 0:
-                    #logging.warning(f'Delete nodes time exceeded, adding: {add_node}, deleting: {delete_node}')
+                    logging.warning(f'Delete nodes time exceeded, adding: {add_node}, deleting: {delete_node}')
                     aux_el = el
                     break
                 drop_idxs = np.random.choice(el.index, delete_node, replace=False)
@@ -135,16 +118,6 @@ class evolutionary_strategy():
         logging.debug(f'"def":"mutate", "elapsed_time":"{et-st}", "iter":"{self.iter_n}"')
         return el
 
-    def map_combinations(self, edge_list):
-        st = time.time()
-        # Remove followEvent (The assumption is that all users have them) Group all events of a user. Then, map the corresponding value for each combination.
-        edge_list = edge_list.loc[edge_list['type'] != 'FollowEvent'].reset_index(drop=True)
-        #TODO: map combinations using map https://stackoverflow.com/questions/24216425/adding-a-new-pandas-column-with-mapped-value-from-a-dictionary
-        map_values = edge_list[['source','type']].groupby('source').apply(lambda x: self.combinations.get(tuple(sorted(x['type'].unique()))))
-        
-        et = time.time()
-        logging.debug(f'"def":"map_combinations", "elapsed_time":"{et-st}", "iter":"{self.iter_n}"')
-        return map_values
 
     def graph_metrics(self, edge_list):
         
@@ -159,17 +132,11 @@ class evolutionary_strategy():
  
         # filter users, concatenate with mapped values
         result = result[result.index.str.startswith('u: ')]
-        et = time.time()
-        mapped_values = self.map_combinations(edge_list)
-        t1 = et - st
-        st = time.time()
-        result = pd.concat([result, mapped_values], axis=1, ignore_index=False).rename(columns={0:'Values'})
-        
         # Scale values
         result = result.apply(lambda x:(x.astype(float) - min(x))/(max(x)-min(x)), axis = 0)
 
         et = time.time()
-        logging.debug(f'"def":"graph_metrics", "elapsed_time":"{et-st+t1}", "iter":"{self.iter_n}"')
+        logging.debug(f'"def":"graph_metrics", "elapsed_time":"{et-st}", "iter":"{self.iter_n}"')
         return result
 
     def objective(self, candidate):  
@@ -211,7 +178,7 @@ class evolutionary_strategy():
             scores = self.pool.map(self.objective, population)
             # rank scores in ascending order
             ranks = np.argsort(np.argsort(scores))
-            logging.info(f'n_iter: {epoch}, best_score: {np.sort(scores)[0]:.5f}, sample_size: {sample}')
+            # logging.info(f'n_iter: {epoch}, best_score: {np.sort(scores)[0]:.5f}, sample_size: {sample}')
             # select the indexes for the top mu ranked solutions, drop the worse results
             selected = [i for i,_ in enumerate(ranks) if ranks[i] < mu]
             # create offspring from parents
