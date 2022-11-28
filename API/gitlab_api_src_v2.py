@@ -200,15 +200,15 @@ class gitlab_flow():
     def flow(self, edge_list):
 
         for i in edge_list.index:
-            if edge_list['type'] == 'PullRequestEvent':
+            if edge_list['type'][i] == 'PullRequestEvent':
                 self.create_pull_request(edge_list['source'][i],edge_list['target'][i])
-            if edge_list['type'] == 'PushEvent':
+            if edge_list['type'][i] == 'PushEvent':
                 self.create_commit(edge_list['source'][i],edge_list['target'][i])
-            if edge_list['type'] == 'ForkEvent':
+            if edge_list['type'][i] == 'ForkEvent':
                 self.create_fork(edge_list['source'][i],edge_list['target'][i])
-            if edge_list['type'] == 'WatchEvent':
+            if edge_list['type'][i] == 'WatchEvent':
                 self.create_watch(edge_list['source'][i],edge_list['target'][i])
-            if edge_list['type'] == 'FollowEvent':
+            if edge_list['type'][i] == 'FollowEvent':
                 self.create_follow(edge_list['source'][i],edge_list['target'][i])
             else:
                 print('event not allowed')
