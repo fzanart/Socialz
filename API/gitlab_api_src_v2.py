@@ -67,9 +67,9 @@ class gitlab_flow():
 
         # 4. if user can not commit/merge request, invite:
         if user_name not in project.users.list(search=user_name):
-            project.invitations.create({"user_id": u_name.id,"access_level": 40,}, sudo=repo_owner) #TODO: SUDO? repo_owner?
+            project.invitations.create({"user_id": user_name.id,"access_level": 40,}, sudo=repo_owner) #TODO: SUDO? repo_owner?
 
-        return u_name, r_owner, project
+        return user_name, repo_owner, project
 
     def create_commit(self, source, target, branch='main', action='update'):
         # Create PushEvent, actions: create, delete, move, update, chmod
