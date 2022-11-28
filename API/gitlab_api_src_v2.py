@@ -45,18 +45,24 @@ class gitlab_flow():
         repo_name = self.replace_bot_substring(repo_name)
         
         # 1. Create user if it does no exist:
-        if user_name not in [x.username for x in self.gl.users.list(search=user_name)]:
+        user_list = [x.username for x in self.gl.users.list(search=user_name)]
+        if user_name not in user_list:
             user_name = self.create_user(user_name)
+        else:
+            user_name = self.gl.users.list(username=user_name)[0]
 
         # 2. Create repo owner user if it does no exist:
-        if repo_owner not in [x.username for x in self.gl.users.list(search=repo_owner)]:
+        repo_list = [x.username for x in self.gl.users.list(search=repo_owner)]
+        if repo_owner not in repo_list:
             repo_owner = self.create_user(repo_owner)
+        else:
+            repo_owner = self.gl.users.list(username=repo_owner)[0]
 
         # 3. Create repo if it does not exist:
         try:
-            project = self.gl.projects.get(f'{repo_owner}/{repo_name}')
+            project = self.gl.projects.get(f'{repo_owner.username}/{repo_name.username}')
         except GitlabGetError:
-            project = self.create_repo(repo_name, repo_owner)
+            project = self.create_repo(repo_name.username, repo_owner.username)
 
         # 4. if user can not commit/merge request, invite:
         if user_name.username not in project.users.list(search=user_name.username):
