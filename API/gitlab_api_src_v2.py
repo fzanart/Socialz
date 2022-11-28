@@ -14,7 +14,7 @@ class gitlab_flow():
         self.max_attemps = max_attemps
         self.gl = Gitlab(url = self.host, private_token = self.token)
 
-    def get_corpus(corpus_path):
+    def get_corpus(self, corpus_path):
         # Read corpus to create random text titles, messages, body.
         with open(corpus_path) as f:
             corpus = f.read().splitlines()
