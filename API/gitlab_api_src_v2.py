@@ -45,7 +45,6 @@ class gitlab_flow():
         repo_name = self.replace_bot_substring(repo_name)
         
         # 1. Create user if it does no exist:
-<<<<<<< HEAD
         user_list = [x.username for x in self.gl.users.list(search=user_name)]
         if user_name not in user_list:
             user_name = self.create_user(user_name)
@@ -58,14 +57,6 @@ class gitlab_flow():
             repo_owner = self.create_user(repo_owner)
         else:
             repo_owner = self.gl.users.list(username=repo_owner)[0]
-=======
-        if user_name not in [x.username for x in self.gl.users.list(search=user_name)]:
-            u_name = self.create_user(user_name)
-
-        # 2. Create repo owner user if it does no exist:
-        if repo_owner not in [x.username for x in self.gl.users.list(search=repo_owner)]:
-            r_owner = self.create_user(repo_owner)
->>>>>>> d2ba2c5c52e129811986498fa0d7d4702838a4c3
 
         # 3. Create repo if it does not exist:
         # TODO: needs sleep time
