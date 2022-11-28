@@ -61,9 +61,9 @@ class gitlab_flow():
         # 3. Create repo if it does not exist:
         # TODO: needs sleep time
         try:
-            project = self.gl.projects.get(f'{repo_owner.username}/{repo_name.username}')
+            project = self.gl.projects.get(f'{repo_owner.username}/{repo_name}')
         except GitlabGetError:
-            project = self.create_repo(repo_name.username, repo_owner.username)
+            project = self.create_repo(repo_name, repo_owner.username)
 
         # 4. if user can not commit/merge request, invite:
         if user_name not in project.users.list(search=user_name):
