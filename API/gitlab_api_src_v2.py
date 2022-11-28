@@ -45,6 +45,7 @@ class gitlab_flow():
         repo_name = self.replace_bot_substring(repo_name)
         
         # 1. Create user if it does no exist:
+<<<<<<< HEAD
         user_list = [x.username for x in self.gl.users.list(search=user_name)]
         if user_name not in user_list:
             user_name = self.create_user(user_name)
@@ -57,18 +58,27 @@ class gitlab_flow():
             repo_owner = self.create_user(repo_owner)
         else:
             repo_owner = self.gl.users.list(username=repo_owner)[0]
+=======
+        if user_name not in [x.username for x in self.gl.users.list(search=user_name)]:
+            u_name = self.create_user(user_name)
+
+        # 2. Create repo owner user if it does no exist:
+        if repo_owner not in [x.username for x in self.gl.users.list(search=repo_owner)]:
+            r_owner = self.create_user(repo_owner)
+>>>>>>> d2ba2c5c52e129811986498fa0d7d4702838a4c3
 
         # 3. Create repo if it does not exist:
+        # TODO: needs sleep time
         try:
             project = self.gl.projects.get(f'{repo_owner.username}/{repo_name.username}')
         except GitlabGetError:
             project = self.create_repo(repo_name.username, repo_owner.username)
 
         # 4. if user can not commit/merge request, invite:
-        if user_name.username not in project.users.list(search=user_name.username):
-            project.invitations.create({"user_id": user_name.id,"access_level": 40,}, sudo=repo_owner.username) #TODO: SUDO? repo_owner?
+        if user_name not in project.users.list(search=user_name):
+            project.invitations.create({"user_id": u_name.id,"access_level": 40,}, sudo=repo_owner) #TODO: SUDO? repo_owner?
 
-        return user_name, repo_owner, project
+        return u_name, r_owner, project
 
     def create_commit(self, source, target, branch='main', action='update'):
         # Create PushEvent, actions: create, delete, move, update, chmod
