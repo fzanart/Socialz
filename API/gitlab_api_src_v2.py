@@ -196,3 +196,20 @@ class gitlab_flow():
         # join the words.
         message = ' '.join([item for sentence in message for item in sentence])
         return message
+
+    def flow(self, edge_list):
+
+        for i in edge_list.index:
+            if edge_list['type'] == 'PullRequestEvent':
+                self.create_pull_request(edge_list['source'][i],edge_list['target'][i])
+            if edge_list['type'] == 'PushEvent':
+                self.create_commit(edge_list['source'][i],edge_list['target'][i])
+            if edge_list['type'] == 'ForkEvent':
+                self.create_fork(edge_list['source'][i],edge_list['target'][i])
+            if edge_list['type'] == 'WatchEvent':
+                self.create_watch(edge_list['source'][i],edge_list['target'][i])
+            if edge_list['type'] == 'FollowEvent':
+                self.create_follow(edge_list['source'][i],edge_list['target'][i])
+            else:
+                print('event not allowed')
+                break
