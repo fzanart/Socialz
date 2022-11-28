@@ -10,7 +10,7 @@ class gitlab_flow():
 
         self.host = host
         self.token = token
-        self.corpus_path = self.get_corpus(corpus_path)
+        self.corpus = self.get_corpus(corpus_path)
         self.max_attemps = max_attemps
         self.gl = Gitlab(url = self.host, private_token = self.token)
 
@@ -66,8 +66,8 @@ class gitlab_flow():
             project = self.create_repo(repo_name, repo_owner.username)
 
         # 4. if user can not commit/merge request, invite:
-        if user_name not in project.users.list(search=user_name):
-            project.invitations.create({"user_id": user_name.id,"access_level": 40,}, sudo=repo_owner) #TODO: SUDO? repo_owner?
+        if user_name.id not in [x.id for x in project.users.list(search=user_name.username)]:
+            project.invitations.create({"user_id": user_name.id,"access_level": 40,}, sudo=repo_owner.username) #TODO: SUDO? repo_owner?
 
         return user_name, repo_owner, project
 
@@ -220,3 +220,4 @@ class gitlab_flow():
             else:
                 print('event not allowed')
                 break
+            time.time(1)
