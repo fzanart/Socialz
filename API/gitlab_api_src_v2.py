@@ -46,7 +46,7 @@ class gitlab_flow():
             repo_owner = self.replace_bot_substring(repo_owner)
             repo_name = self.replace_bot_substring(repo_name)
         else:
-            repo_owner = self.replace_bot_substring(repo_owner)
+            repo_owner = self.replace_bot_substring(target)
         
         # 1. Create user if it does no exist:
         user_list = [x.username for x in self.gl.users.list(search=user_name)]
