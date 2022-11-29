@@ -29,12 +29,12 @@ class gitlab_flow():
 
     def create_user(self, user_name):
         #Create a user
-        user_data = json.dumps({'email': user_name+'@mail.com', 'username': user_name, 'name': user_name, 'reset_password':False, 'password':'password','skip_confirmation':True})
+        user_data = json.loads(json.dumps({'email': user_name+'@mail.com', 'username': user_name, 'name': user_name, 'reset_password':False, 'password':'password','skip_confirmation':True}))
         return self.gl.users.create(user_data)
 
     def create_repo(self,repo_name, repo_owner):
         #Create a gitlab project (Github repo)
-        project_data = json.dumps({'name': repo_name, 'visibility':'public','initialize_with_readme':True})
+        project_data = json.loads(json.dumps({'name': repo_name, 'visibility':'public','initialize_with_readme':True}))
         self.gl.projects.create(project_data, sudo=repo_owner)
         return self.gl.projects.get(f'{repo_owner}/{repo_name}')            
 
@@ -68,14 +68,14 @@ class gitlab_flow():
 
         # 4. if user can not commit/merge request, invite:
         if user_name.id not in [x.id for x in project.users.list(search=user_name.username)]:
-            project.invitations.create(json.dumps({"user_id": user_name.id,"access_level": 40,}), sudo=repo_owner.username)
+            project.invitations.create(json.loads(json.dumps({"user_id": user_name.id,"access_level": 40,}), sudo=repo_owner.username))
 
         return user_name, repo_owner, project
 
     def create_commit(self, source, target, branch='main', action='update'):
         # Create PushEvent, actions: create, delete, move, update, chmod
         user_name, repo_owner, project = self.validate(source, target)   
-        commit_data = json.dumps({'branch': branch,'commit_message': f'{self.title()}\n{self.message()}','actions': [{'action': action,'file_path': 'README.md','content': self.body()}]})
+        commit_data = json.loads(json.dumps({'branch': branch,'commit_message': f'{self.title()}\n{self.message()}','actions': [{'action': action,'file_path': 'README.md','content': self.body()}]}))
         project.commits.create(commit_data, sudo=user_name.username)
 
 
@@ -88,7 +88,7 @@ class gitlab_flow():
             attempt = 0
             while attempt < 5:
                 try:
-                    project.forks.create(json.dumps({'name':project.name+'_'+user_name.username+'_'+str(attempt), 'path':user_name.username+'_'+str(attempt)}), sudo=user_name.username)
+                    project.forks.create(json.loads(json.dumps({'name':project.name+'_'+user_name.username+'_'+str(attempt), 'path':user_name.username+'_'+str(attempt)})), sudo=user_name.username)
                 except:
                     attempt += 1
                     continue
@@ -126,15 +126,15 @@ class gitlab_flow():
         # (2) list all branches, if branches <= 1 (only main exist) create new one.
         branches = project.branches.list(get_all=True)
         if len(branches) <= 1:
-            head_branch = project.branches.create(json.dumps({'branch': 'head_branch','ref': 'main'}), sudo=user_name.username)
-            project.mergerequests.create(json.dumps({'source_branch':head_branch,'target_branch':base_branch,'title':self.title(),'body':self.body(),'target_project_id':project.id}), sudo=user_name.username)
+            head_branch = project.branches.create(json.loads(json.dumps({'branch': 'head_branch','ref': 'main'}), sudo=user_name.username))
+            project.mergerequests.create(json.loads(json.dumps({'source_branch':head_branch,'target_branch':base_branch,'title':self.title(),'body':self.body(),'target_project_id':project.id})), sudo=user_name.username)
 
         else:
         # (3) if it is there less than one merge request, create one: 
             mr_len = len(project.mergerequests.list(get_all = True))
             if mr_len <= 1:
                 head_branch = np.random.choice([branch.name for branch in project.branches.list(get_all=True) if branch.name != 'main'])
-                project.mergerequests.create(json.dumps({'source_branch':head_branch,'target_branch':base_branch,'title':self.title(),'body':self.body(),'target_project_id':project.id}), sudo=user_name.username)
+                project.mergerequests.create(json.loads(json.dumps({'source_branch':head_branch,'target_branch':base_branch,'title':self.title(),'body':self.body(),'target_project_id':project.id})), sudo=user_name.username)
             else: # (3.1) else, pick a random merge request
                 mr = project.mergerequests.get(project.mergerequests.list(get_all = True)[np.random.choice(mr_len)].iid)
                 if mr.state == 'closed': # opened, closed, merged or locked.
@@ -152,7 +152,7 @@ class gitlab_flow():
                 else: #(3.4) if merged, create a new branch/merge request.
                     #create a new branch / merge request.
                     branch_rename = f'{head_branch}_{len(project.branches.list(get_all=True))}'
-                    project.mergerequests.create(json.dumps({'source_branch':branch_rename,'target_branch':base_branch,'title':self.title(),'body':self.body(),'target_project_id':project.id}), sudo=user_name.username)
+                    project.mergerequests.create(json.loads(json.dumps({'source_branch':branch_rename,'target_branch':base_branch,'title':self.title(),'body':self.body(),'target_project_id':project.id})), sudo=user_name.username)
 
     def title(self):
         # n represents the lenght of the text, how many words.
