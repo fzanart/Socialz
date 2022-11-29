@@ -38,7 +38,7 @@ class gitlab_flow():
         self.gl.projects.create(project_data, sudo=repo_owner)
         return self.gl.projects.get(f'{repo_owner}/{repo_name}')            
 
-    def validate(self, source, target):
+    def validate(self, source, target, invite=True):
         # Validate user, repo owner (user) and repo to exist.
         user_name = self.replace_bot_substring(source)
         repo_owner, repo_name = target.split('/')
@@ -61,15 +61,15 @@ class gitlab_flow():
             repo_owner = self.gl.users.list(username=repo_owner)[0]
 
         # 3. Create repo if it does not exist:
-        # TODO: needs sleep time
         try:
             project = self.gl.projects.get(f'{repo_owner.username}/{repo_name}')
         except GitlabGetError:
             project = self.create_repo(repo_name, repo_owner.username)
 
         # 4. if user can not commit/merge request, invite:
-        if user_name.id not in [x.id for x in project.users.list(search=user_name.username)]:
-            project.invitations.create(json.loads(json.dumps({"user_id": user_name.id,"access_level": 40,}), sudo=repo_owner.username))
+        if invite:
+            if user_name.id not in [x.id for x in project.users.list(search=user_name.username)]:
+                project.invitations.create(json.loads(json.dumps({"user_id": user_name.id,"access_level": 40,}), sudo=repo_owner.username))
 
         return user_name, repo_owner, project
 
@@ -86,8 +86,8 @@ class gitlab_flow():
         user_name, repo_owner, project = self.validate(source, target)
         try:
             project.forks.create({}, sudo=user_name.username)
-        except GitlabGetError:
-            attempt = 0
+        except GitlabCreateError:
+            attempt = self.max_attemps
             while attempt < 5:
                 try:
                     project.forks.create(json.loads(json.dumps({'name':project.name+'_'+user_name.username+'_'+str(attempt), 'path':user_name.username+'_'+str(attempt)})), sudo=user_name.username)
@@ -98,7 +98,7 @@ class gitlab_flow():
 
     def create_watch(self, source, target):
         # Star a project (repo), otherwise, unstar.
-        user_name, repo_owner, project = self.validate(source, target)
+        user_name, repo_owner, project = self.validate(source, target, invite=False)
         try:
             project.star(sudo=user_name.username)
         except GitlabCreateError:
@@ -106,25 +106,11 @@ class gitlab_flow():
 
     def create_follow(self, source, target):
         # Create a follow relaton between one user to another.
-        source = self.replace_bot_substring(source)
-        target = self.replace_bot_substring(source)
-
-        if source not in [x.username for x in self.gl.users.list(search=source)]:
-            source = self.create_user(source)
-        else:
-            source = self.gl.users.list(username=source)[0]
-        if target not in [x.username for x in self.gl.users.list(search=target)]:
-            target = self.create_user(target)
-        else:
-            target = self.gl.users.list(username=target)[0]
-
+        source, target, project = self.validate(source, target, invite=False)
         try:
-            response = target.follow(sudo=source.username)
+            return target.follow(sudo=source.username)
         except:
-            try:
-                response = target.unfollow(sudo=source.username)
-            except:
-                response = target.follow(sudo=source.username)
+            return target.unfollow(sudo=source.username)
 
     def create_pull_request(self, source, target):
         # Create pull request by inviting user as project member.
