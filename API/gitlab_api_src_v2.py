@@ -72,9 +72,10 @@ class gitlab_flow():
 
         return user_name, repo_owner, project
 
-    def create_commit(self, source, target, branch='main', action='update'):
+    def create_commit(self, source, target, action='update'):
         # Create PushEvent, actions: create, delete, move, update, chmod
         user_name, repo_owner, project = self.validate(source, target)   
+        branch = np.random.choice([branch.name for branch in project.branches.list(get_all=True)])
         commit_data = json.loads(json.dumps({'branch': branch,'commit_message': f'{self.title()}\n{self.message()}','actions': [{'action': action,'file_path': 'README.md','content': self.body()}]}))
         project.commits.create(commit_data, sudo=user_name.username)
 
@@ -143,13 +144,12 @@ class gitlab_flow():
                     mr.save(sudo=user_name.username)
                 if mr.state == 'opened':
                     # (3.3) If opened, merge or close.
-                    if np.random.choice(['merge', 'close']) == 'merge':
-                        #should_remove_source_branch: If true, removes the source branch.
-                        # raises method not allowed error, only owner can do it?
-                        mr.merge(sudo=user_name.username)
-                    else:
-                        mr.state_event = 'close'
+                    if mr.merge_status == 'cannot_be_merged':
+                        mr.state_event = 'closed'
                         mr.save(sudo=user_name.username)
+                    else:
+                        #should_remove_source_branch: If true, removes the source branch.
+                        mr.merge(should_remove_source_branch = True, sudo=user_name.username)
                 else: #(3.4) if merged, create a new branch/merge request.
                     #create a new branch / merge request.
                     branch_rename = f'{head_branch}_{len(project.branches.list(get_all=True))}'
