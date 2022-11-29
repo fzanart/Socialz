@@ -56,6 +56,7 @@ class gitlab_flow():
         repo_list = [x.username for x in self.gl.users.list(search=repo_owner)]
         if repo_owner not in repo_list:
             repo_owner = self.create_user(repo_owner)
+            time.sleep(0.5) # db needs some time before creating a project for a new user.
         else:
             repo_owner = self.gl.users.list(username=repo_owner)[0]
 
@@ -144,8 +145,8 @@ class gitlab_flow():
                     mr.save(sudo=user_name.username)
                 if mr.state == 'opened':
                     # (3.3) If opened, merge or close.
-                    if mr.merge_status == 'cannot_be_merged':
-                        mr.state_event = 'closed'
+                    if mr.merge_status == 'cannot_be_merged' or mr.merge_status == 'checking':
+                        mr.state_event = 'close'
                         mr.save(sudo=user_name.username)
                     else:
                         #should_remove_source_branch: If true, removes the source branch.
@@ -214,13 +215,16 @@ class gitlab_flow():
                 print(f'{i}th PullRequestEvent created')
             if edge_list['type'][i] == 'PushEvent':
                 self.create_commit(edge_list['source'][i],edge_list['target'][i])
+                print(f'{i}th PushEvent created')
             if edge_list['type'][i] == 'ForkEvent':
                 self.create_fork(edge_list['source'][i],edge_list['target'][i])
+                print(f'{i}th ForkEvent created')
             if edge_list['type'][i] == 'WatchEvent':
                 self.create_watch(edge_list['source'][i],edge_list['target'][i])
+                print(f'{i}th WatchEvent created')
             if edge_list['type'][i] == 'FollowEvent':
                 self.create_follow(edge_list['source'][i],edge_list['target'][i])
+                print(f'{i}th FollowEvent created')
             elif edge_list['type'][i] not in ['PullRequestEvent', 'PushEvent', 'ForkEvent','WatchEvent', 'FollowEvent']:
                 print('event not allowed')
                 break
-            time.time(1)
