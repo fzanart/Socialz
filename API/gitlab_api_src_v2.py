@@ -67,7 +67,7 @@ class gitlab_flow():
 
         # 4. if user can not commit/merge request, invite:
         if user_name.id not in [x.id for x in project.users.list(search=user_name.username)]:
-            project.invitations.create({"user_id": user_name.id,"access_level": 40,}, sudo=repo_owner.username) #TODO: SUDO? repo_owner?
+            project.invitations.create({"user_id": user_name.id,"access_level": 40,}, sudo=repo_owner.username)
 
         return user_name, repo_owner, project
 
@@ -122,8 +122,8 @@ class gitlab_flow():
         user_name, repo_owner, project = self.validate(source, target)
         head_branch, base_branch = 'head_branch', 'main'
         
-        # (2) list all opened branches, if branches < 1 (only main exist) create new one.
-        branches = project.branches.list(state='opened', get_all=True)
+        # (2) list all branches, if branches < 1 (only main exist) create new one.
+        branches = project.branches.list(get_all=True)
         if len(branches) < 1:
             head_branch = project.branches.create({'branch': 'head_branch','ref': 'main'}, sudo=user_name.username)
             project.mergerequests.create({'source_branch':head_branch,'target_branch':base_branch,'title':self.title(),'body':self.body(),'target_project_id':project.id}, sudo=user_name.username)
@@ -131,8 +131,8 @@ class gitlab_flow():
         else:
         # (3) if it is there less than one merge request, create one: 
             mr_len = len(project.mergerequests.list(get_all = True))
-            if mr_len < 1:
-                head_branch = np.random.choice([branch.name for branch in project.branches.list(state='opened', get_all=True)])
+            if mr_len <= 1:
+                head_branch = np.random.choice([branch.name for branch in project.branches.list(get_all=True) if branch.name != 'main'])
                 project.mergerequests.create({'source_branch':head_branch,'target_branch':base_branch,'title':self.title(),'body':self.body(),'target_project_id':project.id}, sudo=user_name.username)
             else: # (3.1) else, pick a random merge request
                 mr = project.mergerequests.get(project.mergerequests.list(get_all = True)[np.random.choice(mr_len)].iid)
