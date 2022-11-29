@@ -119,9 +119,12 @@ class gitlab_flow():
             target = self.gl.users.list(username=target)[0]
 
         try:
-            target.follow(sudo=source.username)
+            response = target.follow(sudo=source.username)
         except:
-            target.unfollow(sudo=source.username)
+            try:
+                response = target.unfollow(sudo=source.username)
+            except:
+                response = target.follow(sudo=source.username)
 
     def create_pull_request(self, source, target):
         # Create pull request by inviting user as project member.
