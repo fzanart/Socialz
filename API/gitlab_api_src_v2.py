@@ -132,7 +132,7 @@ class gitlab_flow():
         else:
         # (3) if it is there less than one merge request, create one: 
             mr_len = len(project.mergerequests.list(get_all = True))
-            if mr_len <= 1:
+            if mr_len < 1:
                 head_branch = np.random.choice([branch.name for branch in project.branches.list(get_all=True) if branch.name != 'main'])
                 project.mergerequests.create(json.loads(json.dumps({'source_branch':head_branch,'target_branch':base_branch,'title':self.title(),'body':self.body(),'target_project_id':project.id})), sudo=user_name.username)
             else: # (3.1) else, pick a random merge request
@@ -145,9 +145,10 @@ class gitlab_flow():
                     # (3.3) If opened, merge or close.
                     if np.random.choice(['merge', 'close']) == 'merge':
                         #should_remove_source_branch: If true, removes the source branch.
-                        mr.merge(should_remove_source_branch = True, sudo=user_name.username)
+                        # raises method not allowed error, only owner can do it?
+                        mr.merge(sudo=user_name.username)
                     else:
-                        mr.state_event = 'closed'
+                        mr.state_event = 'close'
                         mr.save(sudo=user_name.username)
                 else: #(3.4) if merged, create a new branch/merge request.
                     #create a new branch / merge request.
@@ -210,6 +211,7 @@ class gitlab_flow():
         for i in edge_list.index:
             if edge_list['type'][i] == 'PullRequestEvent':
                 self.create_pull_request(edge_list['source'][i],edge_list['target'][i])
+                print(f'{i}th PullRequestEvent created')
             if edge_list['type'][i] == 'PushEvent':
                 self.create_commit(edge_list['source'][i],edge_list['target'][i])
             if edge_list['type'][i] == 'ForkEvent':
@@ -218,7 +220,7 @@ class gitlab_flow():
                 self.create_watch(edge_list['source'][i],edge_list['target'][i])
             if edge_list['type'][i] == 'FollowEvent':
                 self.create_follow(edge_list['source'][i],edge_list['target'][i])
-            else:
+            elif edge_list['type'][i] not in ['PullRequestEvent', 'PushEvent', 'ForkEvent','WatchEvent', 'FollowEvent']:
                 print('event not allowed')
                 break
             time.time(1)
