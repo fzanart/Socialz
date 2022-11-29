@@ -64,18 +64,22 @@ class gitlab_flow():
             repo_owner = self.gl.users.list(username=repo_owner)[0]
 
         # 3. Create repo if it does not exist:
-        try:
-            project = self.gl.projects.get(f'{repo_owner.username}/{repo_name}')
-        except GitlabGetError:
-            project = self.create_repo(repo_name, repo_owner.username)
+        if repo:
+            try:
+                project = self.gl.projects.get(f'{repo_owner.username}/{repo_name}')
+            except GitlabGetError:
+                project = self.create_repo(repo_name, repo_owner.username)
 
         # 4. if user can not commit/merge request, invite:
         if invite:
             if user_name.id not in [x.id for x in project.users.list(search=user_name.username)]:
                 project.invitations.create(json.loads(json.dumps({"user_id": user_name.id,"access_level": 40,}), sudo=repo_owner.username))
 
-        return user_name, repo_owner, project
-
+        if repo:
+            return user_name, repo_owner, project
+        else:
+            return user_name, repo_owner
+            
     def create_commit(self, source, target, action='update'):
         # Create PushEvent, actions: create, delete, move, update, chmod
         user_name, repo_owner, project = self.validate(source, target)   
