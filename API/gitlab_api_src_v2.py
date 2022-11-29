@@ -38,12 +38,15 @@ class gitlab_flow():
         self.gl.projects.create(project_data, sudo=repo_owner)
         return self.gl.projects.get(f'{repo_owner}/{repo_name}')            
 
-    def validate(self, source, target, invite=True):
+    def validate(self, source, target, invite=True, repo=True):
         # Validate user, repo owner (user) and repo to exist.
         user_name = self.replace_bot_substring(source)
-        repo_owner, repo_name = target.split('/')
-        repo_owner = self.replace_bot_substring(repo_owner)
-        repo_name = self.replace_bot_substring(repo_name)
+        if repo:
+            repo_owner, repo_name = target.split('/')
+            repo_owner = self.replace_bot_substring(repo_owner)
+            repo_name = self.replace_bot_substring(repo_name)
+        else:
+            repo_owner = self.replace_bot_substring(repo_owner)
         
         # 1. Create user if it does no exist:
         user_list = [x.username for x in self.gl.users.list(search=user_name)]
@@ -106,7 +109,7 @@ class gitlab_flow():
 
     def create_follow(self, source, target):
         # Create a follow relaton between one user to another.
-        source, target, project = self.validate(source, target, invite=False)
+        source, target, project = self.validate(source, target, invite=False, repo=False)
         try:
             return target.follow(sudo=source.username)
         except:
