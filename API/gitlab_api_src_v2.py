@@ -122,9 +122,9 @@ class gitlab_flow():
         user_name, repo_owner, project = self.validate(source, target)
         head_branch, base_branch = 'head_branch', 'main'
         
-        # (2) list all branches, if branches < 1 (only main exist) create new one.
+        # (2) list all branches, if branches <= 1 (only main exist) create new one.
         branches = project.branches.list(get_all=True)
-        if len(branches) < 1:
+        if len(branches) <= 1:
             head_branch = project.branches.create({'branch': 'head_branch','ref': 'main'}, sudo=user_name.username)
             project.mergerequests.create({'source_branch':head_branch,'target_branch':base_branch,'title':self.title(),'body':self.body(),'target_project_id':project.id}, sudo=user_name.username)
 
