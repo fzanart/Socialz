@@ -113,7 +113,7 @@ class gitlab_flow():
             source = self.create_user(source)
         else:
             source = self.gl.users.list(username=source)[0]
-        if source not in [x.username for x in self.gl.users.list(search=target)]:
+        if target not in [x.username for x in self.gl.users.list(search=target)]:
             target = self.create_user(target)
         else:
             target = self.gl.users.list(username=target)[0]
