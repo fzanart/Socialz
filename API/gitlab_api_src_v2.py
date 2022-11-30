@@ -113,7 +113,7 @@ class gitlab_flow():
 
     def create_follow(self, source, target):
         # Create a follow relaton between one user to another.
-        source, target, project = self.validate(source, target, invite=False, repo=False)
+        source, target = self.validate(source, target, invite=False, repo=False)
         try:
             return target.follow(sudo=source.username)
         except:
