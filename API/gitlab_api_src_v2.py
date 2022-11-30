@@ -4,8 +4,10 @@ from gitlab import Gitlab
 import re
 import random
 import json
+import logging
 from gitlab.exceptions import GitlabCreateError, GitlabGetError       
 
+logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
 class gitlab_flow():
     def __init__(self, host, token, corpus_path='Data/Corpus/corpus.txt', max_attemps=5):
 
@@ -79,7 +81,7 @@ class gitlab_flow():
             return user_name, repo_owner, project
         else:
             return user_name, repo_owner
-            
+
     def create_commit(self, source, target, action='update'):
         # Create PushEvent, actions: create, delete, move, update, chmod
         user_name, repo_owner, project = self.validate(source, target)   
@@ -212,19 +214,19 @@ class gitlab_flow():
         for i in edge_list.index:
             if edge_list['type'][i] == 'PullRequestEvent':
                 self.create_pull_request(edge_list['source'][i],edge_list['target'][i])
-                print(f'{i}th PullRequestEvent created')
+                logging.info(f'{i}th PullRequestEvent created')
             if edge_list['type'][i] == 'PushEvent':
                 self.create_commit(edge_list['source'][i],edge_list['target'][i])
-                print(f'{i}th PushEvent created')
+                logging.info(f'{i}th PushEvent created')
             if edge_list['type'][i] == 'ForkEvent':
                 self.create_fork(edge_list['source'][i],edge_list['target'][i])
-                print(f'{i}th ForkEvent created')
+                logging.info(f'{i}th ForkEvent created')
             if edge_list['type'][i] == 'WatchEvent':
                 self.create_watch(edge_list['source'][i],edge_list['target'][i])
-                print(f'{i}th WatchEvent created')
+                logging.info(f'{i}th WatchEvent created')
             if edge_list['type'][i] == 'FollowEvent':
                 self.create_follow(edge_list['source'][i],edge_list['target'][i])
-                print(f'{i}th FollowEvent created')
+                logging.info(f'{i}th FollowEvent created')
             elif edge_list['type'][i] not in ['PullRequestEvent', 'PushEvent', 'ForkEvent','WatchEvent', 'FollowEvent']:
-                print('event not allowed')
+                logging.critical('Event not allowed')
                 break
