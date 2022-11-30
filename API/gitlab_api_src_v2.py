@@ -7,7 +7,7 @@ import json
 import logging
 from gitlab.exceptions import GitlabCreateError, GitlabGetError       
 
-logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
+logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.INFO)
 class gitlab_flow():
     def __init__(self, host, token, corpus_path='Data/Corpus/corpus.txt', max_attemps=5):
 
