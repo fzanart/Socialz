@@ -5,16 +5,17 @@ import re
 import random
 import json
 import logging
-from gitlab.exceptions import GitlabCreateError, GitlabGetError       
+from gitlab.exceptions import GitlabCreateError, GitlabGetError,GitlabListError, GitlabHttpError       
 
-logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.INFO)
+logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.INFO)
 class gitlab_flow():
-    def __init__(self, host, token, corpus_path='Data/Corpus/corpus.txt', max_attemps=5):
+    def __init__(self, host, token, corpus_path='Data/Corpus/corpus.txt', max_attemps=5, db_waiting_time=0.25):
 
         self.host = host
         self.token = token
         self.corpus = self.get_corpus(corpus_path)
         self.max_attemps = max_attemps
+        self.db_waiting_time = db_waiting_time # db needs some time before creating a project or an invitation for a new user, or a branch for a new project.
         self.gl = Gitlab(url = self.host, private_token = self.token)
 
     def get_corpus(self, corpus_path):
@@ -37,31 +38,43 @@ class gitlab_flow():
     def create_repo(self,repo_name, repo_owner):
         #Create a gitlab project (Github repo)
         project_data = json.loads(json.dumps({'name': repo_name, 'visibility':'public','initialize_with_readme':True}))
-        self.gl.projects.create(project_data, sudo=repo_owner)
-        return self.gl.projects.get(f'{repo_owner}/{repo_name}')            
+        self.gl.projects.create(project_data, sudo=repo_owner.id)
+        return self.gl.projects.get(f'{repo_owner.username}/{repo_name}')
 
     def validate(self, source, target, invite=True, repo=True):
         # Validate user, repo owner (user) and repo to exist.
         user_name = self.replace_bot_substring(source)
         if repo:
             repo_owner, repo_name = target.split('/')
+            # project_namespace.name': "can't be blank",
+            #'project_namespace.path': "can't be blank", "can contain only letters, digits, '_', '-' and '.'. Cannot start with '-', end in '.git' or end in '.atom'", 
+            #'name': "can't be blank", "can contain only letters, digits, emojis, '_', '.', '+', dashes, or spaces. It must start with a letter, digit, emoji, or '_'.", 
+            #'path': "can't be blank", "can contain only letters, digits, '_', '-' and '.'. Cannot start with '-', end in '.git' or end in '.atom'", 'is too short (minimum is 1 character)', "can't be blank"
+            if repo_name == '-': 
+                repo_name = repo_name.replace('-', '1')
+                logging.debug('repo_name not allowed, \'-\' name replaced by \'1\'')
             repo_owner = self.replace_bot_substring(repo_owner)
             repo_name = self.replace_bot_substring(repo_name)
         else:
             repo_owner = self.replace_bot_substring(target)
         
         # 1. Create user if it does no exist:
-        user_list = [x.username for x in self.gl.users.list(search=user_name)]
-        if user_name not in user_list:
+        if user_name not in [x.username for x in self.gl.users.list(search=user_name)]:
             user_name = self.create_user(user_name)
         else:
             user_name = self.gl.users.list(username=user_name)[0]
 
         # 2. Create repo owner user if it does no exist:
-        repo_list = [x.username for x in self.gl.users.list(search=repo_owner)]
-        if repo_owner not in repo_list:
+        if repo_owner not in [x.username for x in self.gl.users.list(search=repo_owner)]:
             repo_owner = self.create_user(repo_owner)
-            time.sleep(0.5) # db needs some time before creating a project for a new user.
+            try:
+                while repo_owner not in [x.username for x in self.gl.users.list(search=repo_owner)]:
+                    time.sleep(self.db_waiting_time) # db needs some time before creating a project for a new user.
+                    logging.debug(f'waiting user creation')
+            except (GitlabHttpError, GitlabListError) as e:
+                time.sleep(self.db_waiting_time*4)
+                logging.debug(f'user creation is taking too long...')
+
         else:
             repo_owner = self.gl.users.list(username=repo_owner)[0]
 
@@ -70,13 +83,19 @@ class gitlab_flow():
             try:
                 project = self.gl.projects.get(f'{repo_owner.username}/{repo_name}')
             except GitlabGetError:
-                project = self.create_repo(repo_name, repo_owner.username)
-
+                project = self.create_repo(repo_name, repo_owner)
+        
         # 4. if user can not commit/merge request, invite:
-        if invite:
+        if invite and user_name.username != repo_owner.username:
             if user_name.id not in [x.id for x in project.users.list(search=user_name.username)]:
-                project.invitations.create(json.loads(json.dumps({"user_id": user_name.id,"access_level": 40,}), sudo=repo_owner.username))
-
+                invitation = project.invitations.create(json.loads(json.dumps({"user_id": user_name.id,"access_level": 40,})), sudo=repo_owner.id)
+                try:
+                    while user_name.id not in [x.id for x in project.users.list(search=user_name.username)]:
+                        time.sleep(self.db_waiting_time) # db needs some time before creating a project for a new user.
+                        logging.debug(f'waiting invitation')
+                except (GitlabHttpError, GitlabListError) as e:
+                    time.sleep(self.db_waiting_time*4)
+                    logging.debug(f'user invitation is taking too long...')
         if repo:
             return user_name, repo_owner, project
         else:
@@ -87,19 +106,19 @@ class gitlab_flow():
         user_name, repo_owner, project = self.validate(source, target)   
         branch = np.random.choice([branch.name for branch in project.branches.list(get_all=True)])
         commit_data = json.loads(json.dumps({'branch': branch,'commit_message': f'{self.title()}\n{self.message()}','actions': [{'action': action,'file_path': 'README.md','content': self.body()}]}))
-        project.commits.create(commit_data, sudo=user_name.username)
+        project.commits.create(commit_data, sudo=user_name.id)
 
 
     def create_fork(self, source, target):
         # Create ForkEvent, retry if fork exist or there is a name conflict:
         user_name, repo_owner, project = self.validate(source, target)
         try:
-            project.forks.create({}, sudo=user_name.username)
+            project.forks.create({}, sudo=user_name.id)
         except GitlabCreateError:
             attempt = self.max_attemps
             while attempt < 5:
                 try:
-                    project.forks.create(json.loads(json.dumps({'name':project.name+'_'+user_name.username+'_'+str(attempt), 'path':user_name.username+'_'+str(attempt)})), sudo=user_name.username)
+                    project.forks.create(json.loads(json.dumps({'name':project.name+'_'+user_name.username+'_'+str(attempt), 'path':user_name.username+'_'+str(attempt)})), sudo=user_name.id)
                 except:
                     attempt += 1
                     continue
@@ -109,17 +128,17 @@ class gitlab_flow():
         # Star a project (repo), otherwise, unstar.
         user_name, repo_owner, project = self.validate(source, target, invite=False)
         try:
-            project.star(sudo=user_name.username)
+            project.star(sudo=user_name.id)
         except GitlabCreateError:
-            project.unstar(sudo=user_name.username)
+            project.unstar(sudo=user_name.id)
 
     def create_follow(self, source, target):
         # Create a follow relaton between one user to another.
         source, target = self.validate(source, target, invite=False, repo=False)
         try:
-            return target.follow(sudo=source.username)
+            return target.follow(sudo=source.id)
         except:
-            return target.unfollow(sudo=source.username)
+            return target.unfollow(sudo=source.id)
 
     def create_pull_request(self, source, target):
         # Create pull request by inviting user as project member.
@@ -130,38 +149,53 @@ class gitlab_flow():
         # (2) list all branches, if branches <= 1 (only main exist) create new one.
         branches = project.branches.list(get_all=True)
         if len(branches) <= 1:
-            head_branch = project.branches.create(json.loads(json.dumps({'branch': 'head_branch','ref': 'main'}), sudo=user_name.username))
-            project.mergerequests.create(json.loads(json.dumps({'source_branch':head_branch,'target_branch':base_branch,'title':self.title(),'body':self.body(),'target_project_id':project.id})), sudo=user_name.username)
-
+            head_branch = project.branches.create(json.loads(json.dumps({'branch': 'head_branch','ref': 'main'})), sudo=user_name.id)
+            try:
+                while 'head_branch' not in [branch.name for branch in project.branches.list(get_all=True)]:
+                    time.sleep(self.db_waiting_time) # db needs some time before creating a project for a new user.
+                    logging.debug(f'waiting branch creation')
+            except (GitlabHttpError, GitlabListError) as e:
+                time.sleep(self.db_waiting_time*4)
+                logging.debug(f'branch creation is taking too long...')
+                project.mergerequests.create(json.loads(json.dumps({'source_branch':head_branch.name,'target_branch':base_branch,'title':self.title(),'body':self.body(),'target_project_id':project.id})), sudo=user_name.id)
         else:
         # (3) if it is there less than one merge request, create one: 
             mr_len = len(project.mergerequests.list(get_all = True))
             if mr_len < 1:
                 head_branch = np.random.choice([branch.name for branch in project.branches.list(get_all=True) if branch.name != 'main'])
-                project.mergerequests.create(json.loads(json.dumps({'source_branch':head_branch,'target_branch':base_branch,'title':self.title(),'body':self.body(),'target_project_id':project.id})), sudo=user_name.username)
+                project.mergerequests.create(json.loads(json.dumps({'source_branch':head_branch,'target_branch':base_branch,'title':self.title(),'body':self.body(),'target_project_id':project.id})), sudo=user_name.id)
             else: # (3.1) else, pick a random merge request
                 mr = project.mergerequests.get(project.mergerequests.list(get_all = True)[np.random.choice(mr_len)].iid)
                 if mr.state == 'closed': # opened, closed, merged or locked.
                     # (3.2) if closed, reopen.
                     mr.state_event = 'reopen'
-                    mr.save(sudo=user_name.username)
+                    mr.save(sudo=user_name.id)
                 if mr.state == 'opened':
                     # (3.3) If opened, merge or close.
                     if mr.merge_status == 'cannot_be_merged' or mr.merge_status == 'checking':
                         mr.state_event = 'close'
-                        mr.save(sudo=user_name.username)
+                        mr.save(sudo=user_name.id)
                     else:
                         #should_remove_source_branch: If true, removes the source branch.
-                        mr.merge(should_remove_source_branch = True, sudo=user_name.username)
+                        mr.merge(should_remove_source_branch = True, sudo=user_name.id)
                 else: #(3.4) if merged, create a new branch/merge request.
                     #create a new branch / merge request.
                     branch_rename = f'{head_branch}_{len(project.branches.list(get_all=True))}'
-                    project.mergerequests.create(json.loads(json.dumps({'source_branch':branch_rename,'target_branch':base_branch,'title':self.title(),'body':self.body(),'target_project_id':project.id})), sudo=user_name.username)
+                    project.mergerequests.create(json.loads(json.dumps({'source_branch':branch_rename,'target_branch':base_branch,'title':self.title(),'body':self.body(),'target_project_id':project.id})), sudo=user_name.id)
+                    try:
+                        while branch_rename.name not in [branch.name for branch in project.branches.list(get_all=True)]:
+                            time.sleep(self.db_waiting_time)
+                            logging.debug(f'waiting branch re_name creation')
+                    except (GitlabHttpError, GitlabListError) as e:
+                        time.sleep(self.db_waiting_time*4)
+                        logging.debug(f'branch re_name creation is taking too long...')
+                        
 
     def title(self):
         # n represents the lenght of the text, how many words.
+        # 'title':'is too long (maximum is 255 characters)'
         n = random.randint(18,42)
-        return ' '.join(random.choices(self.corpus, k=n))
+        return ' '.join(random.choices(self.corpus, k=n))[:255]
 
     def body(self):
         # n represents the lenght of the text, how many words.
@@ -214,19 +248,19 @@ class gitlab_flow():
         for i in edge_list.index:
             if edge_list['type'][i] == 'PullRequestEvent':
                 self.create_pull_request(edge_list['source'][i],edge_list['target'][i])
-                logging.info(f'{i}th PullRequestEvent created')
+                logging.info(f'{i} PullRequestEvent created')
             if edge_list['type'][i] == 'PushEvent':
                 self.create_commit(edge_list['source'][i],edge_list['target'][i])
-                logging.info(f'{i}th PushEvent created')
+                logging.info(f'{i} PushEvent created')
             if edge_list['type'][i] == 'ForkEvent':
                 self.create_fork(edge_list['source'][i],edge_list['target'][i])
-                logging.info(f'{i}th ForkEvent created')
+                logging.info(f'{i} ForkEvent created')
             if edge_list['type'][i] == 'WatchEvent':
                 self.create_watch(edge_list['source'][i],edge_list['target'][i])
-                logging.info(f'{i}th WatchEvent created')
+                logging.info(f'{i} WatchEvent created')
             if edge_list['type'][i] == 'FollowEvent':
                 self.create_follow(edge_list['source'][i],edge_list['target'][i])
-                logging.info(f'{i}th FollowEvent created')
+                logging.info(f'{i} FollowEvent created')
             elif edge_list['type'][i] not in ['PullRequestEvent', 'PushEvent', 'ForkEvent','WatchEvent', 'FollowEvent']:
                 logging.critical('Event not allowed')
                 break
