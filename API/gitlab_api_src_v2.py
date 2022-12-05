@@ -43,7 +43,13 @@ class gitlab_flow():
     def create_user(self, user_name):
         #Create a user
         user_data = json.loads(json.dumps({'email': user_name+'@mail.com', 'username': user_name, 'name': user_name, 'reset_password':False, 'password':'password','skip_confirmation':True}))
-        return self.gl.users.create(user_data)
+        try:
+            return self.gl.users.create(user_data)
+        except GitlabCreateError:
+            while user_name not in [x.username for x in self.gl.users.list(search=user_name, get_all=True)]:
+                time.sleep(self.db_waiting_time)
+                logging.debug(f'waiting user creation')
+            return self.gl.users.list(username=user_name, get_all=True)[0]
 
     def create_repo(self,repo_name, repo_owner):
         #Create a gitlab project (Github repo)
