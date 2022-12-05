@@ -24,7 +24,7 @@ class gitlab_flow():
             corpus = f.read().splitlines()
             return corpus
 
-    def amend_name(name:str):
+    def amend_name(self, name:str):
         # Replace forbidden characters on Gitlab
         validation = re.compile(r'^(?!-|\.git$|\.atom$)[a-zA-Z0-9][a-zA-Z0-9_.-]*[a-zA-Z0-9]$')
         try:
