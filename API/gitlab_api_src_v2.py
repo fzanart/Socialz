@@ -62,16 +62,16 @@ class gitlab_flow():
             repo_owner = self.amend_name(target)
         
         # 1. Create user if it does no exist:
-        if user_name not in [x.username for x in self.gl.users.list(search=user_name)]:
+        if user_name not in [x.username for x in self.gl.users.list(search=user_name, get_all=True)]:
             user_name = self.create_user(user_name)
         else:
-            user_name = self.gl.users.list(username=user_name)[0]
+            user_name = self.gl.users.list(username=user_name, get_all=True)[0]
 
         # 2. Create repo owner user if it does no exist:
-        if repo_owner not in [x.username for x in self.gl.users.list(search=repo_owner)]:
+        if repo_owner not in [x.username for x in self.gl.users.list(search=repo_owner, get_all=True)]:
             repo_owner = self.create_user(repo_owner)
             try:
-                while repo_owner not in [x.username for x in self.gl.users.list(search=repo_owner)]:
+                while repo_owner not in [x.username for x in self.gl.users.list(search=repo_owner, get_all=True)]:
                     time.sleep(self.db_waiting_time) # db needs some time before creating a project for a new user.
                     logging.debug(f'waiting user creation')
             except (GitlabHttpError, GitlabListError) as e:
@@ -79,7 +79,7 @@ class gitlab_flow():
                 logging.debug(f'user creation is taking too long...')
 
         else:
-            repo_owner = self.gl.users.list(username=repo_owner)[0]
+            repo_owner = self.gl.users.list(username=repo_owner, get_all=True)[0]
 
         # 3. Create repo if it does not exist:
         if repo:
@@ -90,7 +90,7 @@ class gitlab_flow():
         
         # 4. if user can not commit/merge request, invite:
         if invite and user_name.username != repo_owner.username:
-            if user_name.id not in [x.id for x in project.users.list(search=user_name.username)]:
+            if user_name.id not in [x.id for x in project.users.list(search=user_name.username, get_all=True)]:
                 invitation = project.invitations.create(json.loads(json.dumps({"user_id": user_name.id,"access_level": 40,})), sudo=repo_owner.id)
                 try:
                     while user_name.id not in [x.id for x in project.users.list(search=user_name.username)]:
