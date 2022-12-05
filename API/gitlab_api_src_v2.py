@@ -46,9 +46,11 @@ class gitlab_flow():
         try:
             return self.gl.users.create(user_data)
         except GitlabCreateError:
-            while user_name not in [x.username for x in self.gl.users.list(search=user_name, get_all=True)]:
+            limit = 0
+            while user_name not in [x.username for x in self.gl.users.list(search=user_name, get_all=True)] and limit < 8:
                 time.sleep(self.db_waiting_time)
                 logging.debug(f'waiting user creation')
+                limit +=1
             return self.gl.users.list(username=user_name, get_all=True)[0]
 
     def create_repo(self,repo_name, repo_owner):
