@@ -24,11 +24,21 @@ class gitlab_flow():
             corpus = f.read().splitlines()
             return corpus
 
-    def replace_bot_substring(self, strg):
+    def amend_name(name:str):
         # Replace forbidden characters on Gitlab
-        output = re.sub(r"\[bot]", "-bot", strg, re.IGNORECASE) #replace [bot] for -bot
-        output = re.sub(r"^[\W_]+|[\W_]+$","",output, re.IGNORECASE) #remove leading and trailing special characters
-        return output
+        validation = re.compile(r'^(?!-|\.git$|\.atom$)[a-zA-Z0-9][a-zA-Z0-9_.-]*[a-zA-Z0-9]$')
+        try:
+            amended_name = re.match(validation, name).string
+            return amended_name
+        except:
+            try:
+                amended_name = re.sub(r'\[bot]','-bot', name, re.IGNORECASE) #replace [bot] for -bot
+                amended_name = re.sub(r"^[\W_]+|[\W_]+$","",amended_name, re.IGNORECASE) #remove leading and trailing special characters
+                amended_name = re.match(validation, amended_name).string
+                return amended_name
+            except:
+                amended_name = name.replace('-','45') # for repo named '-', user 'v--' replace hyphen with its ASCII code => 45.
+                return amended_name
 
     def create_user(self, user_name):
         #Create a user
@@ -43,20 +53,13 @@ class gitlab_flow():
 
     def validate(self, source, target, invite=True, repo=True):
         # Validate user, repo owner (user) and repo to exist.
-        user_name = self.replace_bot_substring(source)
+        user_name = self.amend_name(source)
         if repo:
             repo_owner, repo_name = target.split('/')
-            # project_namespace.name': "can't be blank",
-            #'project_namespace.path': "can't be blank", "can contain only letters, digits, '_', '-' and '.'. Cannot start with '-', end in '.git' or end in '.atom'", 
-            #'name': "can't be blank", "can contain only letters, digits, emojis, '_', '.', '+', dashes, or spaces. It must start with a letter, digit, emoji, or '_'.", 
-            #'path': "can't be blank", "can contain only letters, digits, '_', '-' and '.'. Cannot start with '-', end in '.git' or end in '.atom'", 'is too short (minimum is 1 character)', "can't be blank"
-            if repo_name == '-': 
-                repo_name = repo_name.replace('-', '1')
-                logging.debug('repo_name not allowed, \'-\' name replaced by \'1\'')
-            repo_owner = self.replace_bot_substring(repo_owner)
-            repo_name = self.replace_bot_substring(repo_name)
+            repo_owner = self.amend_name(repo_owner)
+            repo_name = self.amend_name(repo_name)
         else:
-            repo_owner = self.replace_bot_substring(target)
+            repo_owner = self.amend_name(target)
         
         # 1. Create user if it does no exist:
         if user_name not in [x.username for x in self.gl.users.list(search=user_name)]:
