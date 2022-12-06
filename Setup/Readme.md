@@ -16,6 +16,8 @@ docker run \
     external_url 'http://localhost';
     node_exporter['enable'] = true;
     grafana['enable'] = true;
+    prometheus['listen_address'] = '0.0.0.0:9090';
+    gitlab_rails['monitoring_whitelist'] = ['127.0.0.0/8', '::1/128', '192.168.0.1', '0.0.0.0/0'];
     nginx['redirect_http_to_https'] = true; "\
   --volume /srv/gitlab-ce/conf:/etc/gitlab:z \
   --volume /srv/gitlab-ce/logs:/var/log/gitlab:z \
@@ -35,6 +37,12 @@ sudo rm -r /srv/gitlab-ce/ # removes data.
 docker ps # shows running containers.
 ```
 3.2 Gitlab:
+
+Trying to reach prometheus endpoint, the only thing that worked so far is:   
+uncomment `prometheus['listen_address'] = '0.0.0.0:9090'`  
+add this line too to access \-\metrics endopoint: `gitlab_rails['monitoring_whitelist'] = ['127.0.0.0/8', '::1/128', '192.168.0.1', '0.0.0.0/0']`  
+
+
 ```
 sudo docker logs -f gitlab # check logs.
 docker exec -it gitlab-ce editor /etc/gitlab/gitlab.rb # edit configurations.
