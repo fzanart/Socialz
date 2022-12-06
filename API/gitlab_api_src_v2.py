@@ -188,11 +188,12 @@ class gitlab_flow():
                         mr.save(sudo=user_name.id)
                     else:
                         #should_remove_source_branch: If true, removes the source branch.
-                        sb = mr.source_branch
+                        sb, limit = mr.source_branch, 0
                         mr.merge(should_remove_source_branch = True, sudo=user_name.id)
-                        while sb in [pr.source_branch for pr in project.mergerequests.list(get_all = True)]:
+                        while sb in [pr.source_branch for pr in project.mergerequests.list(get_all = True)] and limit < 8:
                             time.sleep(self.db_waiting_time)
                             logging.debug(f'waiting mr source branch deletion')
+                            limit += 1
                 else: #(3.4) if merged, create a new branch/merge request.
                     #create a new branch / merge request.
                     branch_rename = f'{head_branch}_{len(project.branches.list(get_all=True))}'
