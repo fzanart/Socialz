@@ -206,16 +206,19 @@ class gitlab_flow():
                 else: #(3.4) if merged, create a new branch/merge request.
                     #create a new branch / merge request.
                     branch_rename = f'{head_branch}_{len(project.branches.list(get_all=True))}'
-                    branch_rename = project.branches.create(json.loads(json.dumps({'branch': branch_rename,'ref': 'main'})), sudo=user_name.id)
                     try:
-                        while branch_rename.name not in [branch.name for branch in project.branches.list(get_all=True)]:
-                            time.sleep(self.db_waiting_time)
-                            logging.debug(f'waiting branch re_name creation')
-                    except (GitlabHttpError, GitlabListError) as e:
-                        time.sleep(self.db_waiting_time*4)
-                        logging.debug(f'branch re_name creation is taking too long...')
-                    project.mergerequests.create(json.loads(json.dumps({'source_branch':branch_rename.name,'target_branch':base_branch,'title':self.title(),'body':self.body(),'target_project_id':project.id})), sudo=user_name.id)
-                        
+                        branch_rename = project.branches.create(json.loads(json.dumps({'branch': branch_rename,'ref': 'main'})), sudo=user_name.id)
+                        try:
+                            while branch_rename.name not in [branch.name for branch in project.branches.list(get_all=True)]:
+                                time.sleep(self.db_waiting_time)
+                                logging.debug(f'waiting branch re_name creation')
+                        except (GitlabHttpError, GitlabListError) as e:
+                            time.sleep(self.db_waiting_time*4)
+                            logging.debug(f'branch re_name creation is taking too long...')
+                        project.mergerequests.create(json.loads(json.dumps({'source_branch':branch_rename.name,'target_branch':base_branch,'title':self.title(),'body':self.body(),'target_project_id':project.id})), sudo=user_name.id)
+                    except GitlabCreateError:
+                        project.mergerequests.create(json.loads(json.dumps({'source_branch':branch_rename.name,'target_branch':base_branch,'title':self.title(),'body':self.body(),'target_project_id':project.id})), sudo=user_name.id)
+
 
     def title(self):
         # n represents the lenght of the text, how many words.
