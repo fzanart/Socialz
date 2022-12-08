@@ -46,11 +46,11 @@ class gitlab_flow():
         try:
             return self.gl.users.create(user_data)
         except GitlabCreateError:
-            limit = 0
-            while user_name not in [x.username for x in self.gl.users.list(search=user_name, get_all=True)] and limit < 8:
+            timeout = 0
+            while user_name not in [x.username for x in self.gl.users.list(search=user_name, get_all=True)] and timeout < 8:
                 time.sleep(self.db_waiting_time)
                 logging.debug(f'waiting user creation')
-                limit +=1
+                timeout +=1
             return self.gl.users.list(username=user_name, get_all=True)[0]
 
     def create_repo(self,repo_name, repo_owner):
@@ -117,9 +117,13 @@ class gitlab_flow():
         user_name, repo_owner, project = self.validate(source, target)   
         branch = np.random.choice([branch.name for branch in project.branches.list(get_all=True)])
         commit_data = json.loads(json.dumps({'branch': branch,'commit_message': f'{self.title()}\n{self.message()}','actions': [{'action': action,'file_path': 'README.md','content': self.body()}]}))
-        project.commits.create(commit_data, sudo=user_name.id)
-
-
+        try:
+            project.commits.create(commit_data, sudo=user_name.id)
+        except GitlabCreateError:
+            another_branch = np.random.choice([branch.name for branch in project.branches.list(get_all=True) if branch.name != branch])
+            commit_data = json.loads(json.dumps({'branch': another_branch,'commit_message': f'{self.title()}\n{self.message()}','actions': [{'action': action,'file_path': 'README.md','content': self.body()}]}))
+            project.commits.create(commit_data, sudo=user_name.id)
+            
     def create_fork(self, source, target):
         # Create ForkEvent, retry if fork exist or there is a name conflict:
         user_name, repo_owner, project = self.validate(source, target)
@@ -188,12 +192,17 @@ class gitlab_flow():
                         mr.save(sudo=user_name.id)
                     else:
                         #should_remove_source_branch: If true, removes the source branch.
-                        sb, limit = mr.source_branch, 0
+                        sb, deleting, timeout = mr.source_branch, True, 0
                         mr.merge(should_remove_source_branch = True, sudo=user_name.id)
-                        while sb in [pr.source_branch for pr in project.mergerequests.list(get_all = True)] and limit < 8:
-                            time.sleep(self.db_waiting_time)
-                            logging.debug(f'waiting mr source branch deletion')
-                            limit += 1
+                        while deleting and timeout < 8:
+                            try:
+                                project.branches.get(sb)
+                                logging.debug(f'waiting mr source branch deletion')
+                                time.sleep(self.db_waiting_time)
+                                timeout += 1
+                            except GitlabGetError:
+                                deleting = False
+
                 else: #(3.4) if merged, create a new branch/merge request.
                     #create a new branch / merge request.
                     branch_rename = f'{head_branch}_{len(project.branches.list(get_all=True))}'
