@@ -1,7 +1,7 @@
 # Install Gitlab - Docker:
 1. For Docker installation, just follow the [official guide](https://docs.docker.com/engine/install/ubuntu/)  
 
-2. Run:
+2. Run: `docker pull yrzr/gitlab-ce-arm64v8` # Lastest gitlab version for ARM64
 ```
 docker run \
   --detach \
