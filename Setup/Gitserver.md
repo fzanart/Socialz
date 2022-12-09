@@ -394,8 +394,9 @@ References:
 
 
 ## 7. Install Gitlab - Docker:
+1. For Docker installation, just follow the [official guide](https://docs.docker.com/engine/install/ubuntu/)  
 
-1. Run:   
+2. Run:   
 ```
 docker run \
   --detach \
@@ -417,26 +418,26 @@ docker run \
   --volume /srv/gitlab-ce/data:/var/opt/gitlab:z \
   yrzr/gitlab-ce-arm64v8:latest
 ```  
-2. Set ```root``` password:
+3. Set ```root``` password:
    ```
    docker exec -it gitlab-ce gitlab-rake 'gitlab:password:reset[root]'
    ```
-3. Some helper functions in case of need to change configurations:   
+4. Some helper functions in case of need to change configurations:   
 
-3.1 Docker:   
+4.1 Docker:   
 
    ```docker kill gitlab-ce``` # terminates the container.  
    ```docker rm gitlab-ce``` # removes the container.  
    ```sudo rm -r /srv/gitlab-ce/``` # removes data.  
    ```docker ps``` # shows running containers.  
    
-3.2 Gitlab:   
+4.2 Gitlab:   
 
    ```sudo docker logs -f gitlab``` # check logs.  
    ```docker exec -it gitlab-ce editor /etc/gitlab/gitlab.rb``` # edit configurations.  
    ```docker exec -it gitlab-ce gitlab-ctl reconfigure``` # reconfigure changes.  
    
-3.3 Vim (To edit configurations):   
+4.3 Vim (To edit configurations):   
 
    ```i```   Start insert mode at/after cursor.  
    ```Esc```	Exit insert mode.  
@@ -454,3 +455,4 @@ References:
 [21] https://hub.docker.com/r/yrzr/gitlab-ce-arm64v8  
 [22] https://gitlab.com/gitlab-org/omnibus-gitlab/-/issues/4917  
 [23] https://forum.gitlab.com/t/grafana-gitlab-overview-board-doesnt-work/28535/2  
+[24] https://docs.docker.com/engine/install/ubuntu/
