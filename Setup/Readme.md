@@ -1,6 +1,7 @@
 # Install Gitlab - Docker:
+1. For Docker installation, just follow the [official guide](https://docs.docker.com/engine/install/ubuntu/)  
 
-Run:
+2. Run:
 ```
 docker run \
   --detach \
@@ -24,31 +25,32 @@ docker run \
   --volume /srv/gitlab-ce/data:/var/opt/gitlab:z \
   yrzr/gitlab-ce-arm64v8:latest
 ```
-Set root password:
-```docker exec -it gitlab-ce gitlab-rake 'gitlab:password:reset[root]'```
+3. Set root password:
+```
+docker exec -it gitlab-ce gitlab-rake 'gitlab:password:reset[root]'
+```
 
-Some helper functions in case of need to change configurations:   
+4. Some helper functions in case of need to change configurations:   
 
-3.1 Docker:
+4.1 Docker:
 ```
 docker kill gitlab-ce # terminates the container.
 docker rm gitlab-ce # removes the container.
 sudo rm -r /srv/gitlab-ce/ # removes data.
 docker ps # shows running containers.
 ```
-3.2 Gitlab:
+4.2 Gitlab:
 
 Trying to reach prometheus endpoint, the only thing that worked so far is:   
 uncomment `prometheus['listen_address'] = '0.0.0.0:9090'`  
 add this line too to access \-\metrics endopoint: `gitlab_rails['monitoring_whitelist'] = ['127.0.0.0/8', '::1/128', '192.168.0.1', '0.0.0.0/0']`  
-
 
 ```
 sudo docker logs -f gitlab # check logs.
 docker exec -it gitlab-ce editor /etc/gitlab/gitlab.rb # edit configurations.
 docker exec -it gitlab-ce gitlab-ctl reconfigure # reconfigure changes.
 ```
-3.3 Vim (To edit configurations):
+4.3 Vim (To edit configurations):
 ```
 i Start insert mode at/after cursor.
 Esc Exit insert mode.
