@@ -217,7 +217,7 @@ class gitlab_flow():
                             logging.debug(f'branch re_name creation is taking too long...')
                         project.mergerequests.create(json.loads(json.dumps({'source_branch':branch_rename.name,'target_branch':base_branch,'title':self.title(),'body':self.body(),'target_project_id':project.id})), sudo=user_name.id)
                     except GitlabCreateError:
-                        project.mergerequests.create(json.loads(json.dumps({'source_branch':branch_rename.name,'target_branch':base_branch,'title':self.title(),'body':self.body(),'target_project_id':project.id})), sudo=user_name.id)
+                        project.mergerequests.create(json.loads(json.dumps({'source_branch':branch_rename,'target_branch':base_branch,'title':self.title(),'body':self.body(),'target_project_id':project.id})), sudo=user_name.id)
 
 
     def title(self):
