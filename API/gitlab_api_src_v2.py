@@ -117,12 +117,22 @@ class gitlab_flow():
         user_name, repo_owner, project = self.validate(source, target)   
         branch = np.random.choice([branch.name for branch in project.branches.list(get_all=True)])
         commit_data = json.loads(json.dumps({'branch': branch,'commit_message': f'{self.title()}\n{self.message()}','actions': [{'action': action,'file_path': 'README.md','content': self.body()}]}))
-        try:
-            project.commits.create(commit_data, sudo=user_name.id)
-        except GitlabCreateError:
-            another_branch = np.random.choice([branch.name for branch in project.branches.list(get_all=True) if branch.name != branch])
-            commit_data = json.loads(json.dumps({'branch': another_branch,'commit_message': f'{self.title()}\n{self.message()}','actions': [{'action': action,'file_path': 'README.md','content': self.body()}]}))
-            project.commits.create(commit_data, sudo=user_name.id)
+        try: # Try commiting to a random branch.
+            return project.commits.create(commit_data, sudo=user_name.id)
+        except GitlabCreateError: # If we get an error, try commiting to another branch.
+            timeout = 0
+            while timeout < 8:
+                try:
+                    another_branch = np.random.choice([b.name for b in project.branches.list(get_all=True) if b.name != branch])
+                    commit_data = json.loads(json.dumps({'branch': another_branch,'commit_message': f'{self.title()}\n{self.message()}','actions': [{'action': action,'file_path': 'README.md','content': self.body()}]}))
+                    return project.commits.create(commit_data, sudo=user_name.id)
+                except GitlabCreateError:
+                    time.sleep(self.db_waiting_time)
+                    timeout += 1
+                    continue
+            if timeout >= 8: # If nothing worked, make a last try comiting to main branch.
+                commit_data = json.loads(json.dumps({'branch': 'main','commit_message': f'{self.title()}\n{self.message()}','actions': [{'action': action,'file_path': 'README.md','content': self.body()}]}))
+                return project.commits.create(commit_data, sudo=user_name.id)
             
     def create_fork(self, source, target):
         # Create ForkEvent, retry if fork exist or there is a name conflict:
