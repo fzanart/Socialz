@@ -5,11 +5,16 @@ import re
 import random
 import json
 import logging
+from tqdm import tqdm
 from gitlab.exceptions import GitlabCreateError, GitlabGetError,GitlabListError, GitlabHttpError       
 
-logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.INFO)
+logging.basicConfig(level=logging.INFO,
+                    format="{\"time\": \"%(asctime)s\", \"levelname\": \"%(levelname)s\", \"message\": \"%(message)s\"},",
+                    datefmt='%m/%d/%Y %I:%M:%S %p',
+                    filename='log_file.log',
+                    filemode='x')
 class gitlab_flow():
-    def __init__(self, host, token, corpus_path='Data/Corpus/corpus.txt', max_attemps=5, db_waiting_time=0.25):
+    def __init__(self, host, token, corpus_path='Data/Corpus/corpus.txt', max_attemps=5, db_waiting_time=0.25, disable_progress_bar=False):
 
         self.host = host
         self.token = token
@@ -284,22 +289,39 @@ class gitlab_flow():
 
     def flow(self, edge_list):
 
-        for i in edge_list.index:
-            if edge_list['type'][i] == 'PullRequestEvent':
-                self.create_pull_request(edge_list['source'][i],edge_list['target'][i])
-                logging.info(f'{i} PullRequestEvent created')
-            if edge_list['type'][i] == 'PushEvent':
-                self.create_commit(edge_list['source'][i],edge_list['target'][i])
-                logging.info(f'{i} PushEvent created')
-            if edge_list['type'][i] == 'ForkEvent':
-                self.create_fork(edge_list['source'][i],edge_list['target'][i])
-                logging.info(f'{i} ForkEvent created')
-            if edge_list['type'][i] == 'WatchEvent':
-                self.create_watch(edge_list['source'][i],edge_list['target'][i])
-                logging.info(f'{i} WatchEvent created')
-            if edge_list['type'][i] == 'FollowEvent':
-                self.create_follow(edge_list['source'][i],edge_list['target'][i])
-                logging.info(f'{i} FollowEvent created')
-            elif edge_list['type'][i] not in ['PullRequestEvent', 'PushEvent', 'ForkEvent','WatchEvent', 'FollowEvent']:
-                logging.critical('Event not allowed')
+        for i in (pbar := tqdm(range(edge_list.index), disable=self.disable_progress_bar)):
+            attempt = 0
+            while attempt < self.max_attemps:
+                attempt += 1
+                try:
+                    if edge_list['type'][i] == 'PullRequestEvent':
+                        self.create_pull_request(edge_list['source'][i],edge_list['target'][i])
+                        pbar.set_description(f'{i} PullRequestEvent created')   
+                        logging.info(f'{i} PullRequestEvent created')
+                    if edge_list['type'][i] == 'PushEvent':
+                        self.create_commit(edge_list['source'][i],edge_list['target'][i])
+                        pbar.set_description(f'{i} PushEvent created')   
+                        logging.info(f'{i} PushEvent created')
+                    if edge_list['type'][i] == 'ForkEvent':
+                        self.create_fork(edge_list['source'][i],edge_list['target'][i])
+                        pbar.set_description(f'{i} ForkEvent created')   
+                        logging.info(f'{i} ForkEvent created')
+                    if edge_list['type'][i] == 'WatchEvent':
+                        self.create_watch(edge_list['source'][i],edge_list['target'][i])
+                        pbar.set_description(f'{i} WatchEvent created')   
+                        logging.info(f'{i} WatchEvent created')
+                    if edge_list['type'][i] == 'FollowEvent':
+                        self.create_follow(edge_list['source'][i],edge_list['target'][i])
+                        pbar.set_description(f'{i} FollowEvent created')   
+                        logging.info(f'{i} FollowEvent created')
+                    elif edge_list['type'][i] not in ['PullRequestEvent', 'PushEvent', 'ForkEvent','WatchEvent', 'FollowEvent']:
+                        logging.critical('Event not allowed')
+                        break
+                except Exception as e:
+                    error = str(e)
+                    pbar.set_description(f'Error on: {i} attempt: {attempt}')   
+                    logging.warning(f'{error}')
+                    continue
                 break
+            else:
+                logging.critical(f'{error}')
