@@ -22,6 +22,7 @@ class gitlab_flow():
         self.max_attemps = max_attemps
         self.db_waiting_time = db_waiting_time # db needs some time before creating a project or an invitation for a new user, or a branch for a new project.
         self.gl = Gitlab(url = self.host, private_token = self.token)
+        self.progress_bar = disable_progress_bar
 
     def get_corpus(self, corpus_path):
         # Read corpus to create random text titles, messages, body.
@@ -289,7 +290,7 @@ class gitlab_flow():
 
     def flow(self, edge_list):
 
-        for i in (pbar := tqdm(range(edge_list.index), disable=self.disable_progress_bar)):
+        for i in (pbar := tqdm(range(edge_list.index), disable=self.progress_bar)):
             attempt = 0
             while attempt < self.max_attemps:
                 attempt += 1

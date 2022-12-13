@@ -10,13 +10,13 @@ from itertools import combinations
 import time
 
 logging.basicConfig(filename='logfile_gt.log',
-                    filemode='a', #append rather than overwrite
+                    filemode='x', #open for exclusive creation, failing if the file already exists.
                     datefmt='%H:%M:%S,uuu',#'%d-%b-%y %H:%M:%S',
                     level=logging.INFO,
                     format='{%(message)s},')
 class evolutionary_strategy():
 
-    def __init__(self, edge_list, cpus=4, debug_mode=False):
+    def __init__(self, edge_list, cpus=4):
         self.iter_n = 0
         self.edge_list = edge_list
         self.users = edge_list['source'].unique().tolist()
@@ -203,7 +203,6 @@ class evolutionary_strategy():
             # change iteration number (iter_n) for logging purposes.
             self.iter_n = epoch
             # sample from binomial distribution > 0
-            if prob > 1: prob = 1 # set upper bound
             sample = np.random.binomial(n, prob)
             if sample < 1: sample = 1 # set lower bound
             pbar.set_description(f'best score: {best_eval:.5f}, step_size: {sample}, progress')           
@@ -211,7 +210,7 @@ class evolutionary_strategy():
             scores = self.pool.map(self.objective, population)
             # rank scores in ascending order
             ranks = np.argsort(np.argsort(scores))
-            logging.info(f'n_iter: {epoch}, best_score: {np.sort(scores)[0]:.5f}, sample_size: {sample}')
+            logging.info(f'n_iter: {epoch}, best_score: {scores[ranks.tolist().index(0)]:.5f}, sample_size: {sample}')
             # select the indexes for the top mu ranked solutions, drop the worse results
             selected = [i for i,_ in enumerate(ranks) if ranks[i] < mu]
             # create offspring from parents
@@ -219,11 +218,10 @@ class evolutionary_strategy():
             for i in selected:
             # check if this parent is the best solution ever seen
                 count = 0 # add a counter of successful candidates
-                if scores[i] < best_eval:
-                    best, best_eval, niter = population[i], scores[i], epoch
+                if scores[i] <= best_eval:
                     count += 1
-                    if disable_progress_bar:
-                        logging.info(f'n_iter: {epoch}, score: {best_eval:.5f}, sample_size: {sample}')
+                    if scores[i] < best_eval:
+                        best, best_eval, niter = population[i], scores[i], epoch
                 # keep the parent
                 offspring.append(population[i])
                 # create offspring for parent
@@ -232,8 +230,8 @@ class evolutionary_strategy():
                     offspring.append(child)
             # replace population with children
             population = offspring
-            if count > 0: prob = prob*A #increase success prob when successful candidates were encountered
-            else: prob = prob*b # decrease prob.
+            if count > 0: prob = min(prob*A, 1) #increase success prob when successful candidates were encountered
+            else: prob = max(prob*b, 0) # decrease prob.
         et = time.time()
         logging.debug(f'"def":"es_plus", "elapsed_time":"{et-st}", "iter":"{self.iter_n}"')
         return niter, best, best_eval
