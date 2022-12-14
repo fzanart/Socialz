@@ -10,7 +10,7 @@ from itertools import combinations
 import time
 
 logging.basicConfig(filename='logfile_gt.log',
-                    filemode='x', #open for exclusive creation, failing if the file already exists.
+                    filemode='w', #open for exclusive creation, failing if the file already exists.
                     datefmt='%H:%M:%S,uuu',#'%d-%b-%y %H:%M:%S',
                     level=logging.INFO,
                     format='{%(message)s},')
@@ -218,10 +218,9 @@ class evolutionary_strategy():
             for i in selected:
             # check if this parent is the best solution ever seen
                 count = 0 # add a counter of successful candidates
-                if scores[i] <= best_eval:
+                if scores[i] < best_eval:
                     count += 1
-                    if scores[i] < best_eval:
-                        best, best_eval, niter = population[i], scores[i], epoch
+                    best, best_eval, niter = population[i], scores[i], epoch
                 # keep the parent
                 offspring.append(population[i])
                 # create offspring for parent
