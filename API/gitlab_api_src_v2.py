@@ -322,7 +322,6 @@ class gitlab_flow():
                     error = str(e)
                     pbar.set_description(f'Error on: {i} attempt: {attempt}')   
                     logging.warning(f'{i} {edge_list.loc[i,:]} {error}')
-                    time.sleep(1)
                     continue
                 break
             else:
