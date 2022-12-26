@@ -292,7 +292,7 @@ class gitlab_flow():
 
         for i in (pbar := tqdm(edge_list.index, disable=self.progress_bar)):
             attempt = 0
-            while attempt < self.max_attemps:
+            while attempt < 1:
                 attempt += 1
                 try:
                     if edge_list.loc[i, 'type'] == 'PullRequestEvent':
