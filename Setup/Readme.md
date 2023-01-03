@@ -50,6 +50,22 @@ sudo docker logs -f gitlab # check logs.
 docker exec -it gitlab-ce editor /etc/gitlab/gitlab.rb # edit configurations.
 docker exec -it gitlab-ce gitlab-ctl reconfigure # reconfigure changes.
 ```
+
+For allowing to follow more than the default 300 users, change MAX_FOLLOWEE_LIMIT to the desired limit:
+
+```
+docker exec -it gitlab-ce /bin/bash
+cd /opt/gitlab/embedded/service/gitlab-rails/app/models/users
+vi user_follow_user.rb
+```
+
+Then restart:
+```
+docker restart gitlab-ce
+```
+
+
+
 4.3 Vim (To edit configurations):
 ```
 i Start insert mode at/after cursor.
