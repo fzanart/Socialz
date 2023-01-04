@@ -55,8 +55,9 @@ For allowing to follow more than the default 300 users, change MAX_FOLLOWEE_LIMI
 
 ```
 docker exec -it gitlab-ce /bin/bash
-cd /opt/gitlab/embedded/service/gitlab-rails/app/models/users
-vi user_follow_user.rb
+```
+```
+vi /opt/gitlab/embedded/service/gitlab-rails/app/models/users/user_follow_user.rb
 ```
 
 Then restart:
