@@ -10,7 +10,7 @@ from gitlab.exceptions import GitlabCreateError, GitlabGetError,GitlabListError,
 
 logging.basicConfig(level=logging.INFO,
                     format="{\"time\": \"%(asctime)s\", \"levelname\": \"%(levelname)s\", \"message\": \"%(message)s\"},",
-                    datefmt='%m/%d/%Y %I:%M:%S %p',
+                    datefmt='%m/%d/%Y %I:%M:%S.%f %p',
                     filename='log_file.log',
                     filemode='w')
 class gitlab_flow():
@@ -289,10 +289,10 @@ class gitlab_flow():
         return message
 
     def flow(self, edge_list):
-
+        logging.info(f'Workflow started')
         for i in (pbar := tqdm(edge_list.index, disable=self.progress_bar)):
             attempt = 0
-            while attempt < 1:
+            while attempt < 5:
                 attempt += 1
                 try:
                     if edge_list.loc[i, 'type'] == 'PullRequestEvent':
@@ -326,3 +326,4 @@ class gitlab_flow():
                 break
             else:
                 logging.critical(f'{i} {error}')
+        logging.info(f'Workflow endend')
