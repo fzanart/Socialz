@@ -9,3 +9,10 @@ Untitled.txt
 Untitled2.txt
 Untitled3.txt
 complete_logfile.txt
+*.pdf
+*.png
+*.html
+*.docx
+Data/expanded_dataset_random10k.csv
+Data/expanded_dataset_simple10k.csv
+Data/Mutated_dataset_10kiter.csv
