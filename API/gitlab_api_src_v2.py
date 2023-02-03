@@ -9,7 +9,7 @@ from tqdm import tqdm
 from gitlab.exceptions import GitlabCreateError, GitlabGetError,GitlabListError, GitlabHttpError       
 
 logging.basicConfig(level=logging.INFO,
-                    format="{\"time\": \"%(asctime)s\", \"levelname\": \"%(levelname)s\", \"message\": \"%(message)s\"},",
+                    format="{\"time\": \"'%(asctime)s.%(msecs)03d'\", \"levelname\": \"%(levelname)s\", \"message\": \"%(message)s\"},",
                     datefmt='%m/%d/%Y %I:%M:%S.%f %p',
                     filename='log_file.log',
                     filemode='w')
