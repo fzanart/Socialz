@@ -9,8 +9,8 @@ from tqdm import tqdm
 from gitlab.exceptions import GitlabCreateError, GitlabGetError,GitlabListError, GitlabHttpError       
 
 logging.basicConfig(level=logging.INFO,
-                    format="{\"time\": \"%(asctime)s\", \"levelname\": \"%(levelname)s\", \"message\": \"%(message)s\"},",
-                    datefmt='%m/%d/%Y %I:%M:%S.%f %p',
+                    format="{\"time\": \"'%(asctime)s'\", \"levelname\": \"%(levelname)s\", \"message\": \"%(message)s\"},",
+                    #datefmt='%m/%d/%Y %I:%M:%S.%f %p',
                     filename='log_file.log',
                     filemode='w')
 class gitlab_flow():
