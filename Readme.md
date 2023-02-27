@@ -53,4 +53,4 @@ This program loads a .csv dataset into a Gitlab server, it starts by reading fil
 `python load_dataset.py --input_file_path your_file_path --token your_file_name your_token`
 
 Additional parameters:   
-`host` Set the host address, default = http://localhost
+`host` Set the host address, default = `http://localhost`
