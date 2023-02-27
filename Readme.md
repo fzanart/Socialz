@@ -17,7 +17,7 @@ This repository contains:
 
 # evolution_run.py:
 
-## Input 
+### Input 
 
 To optimise a .csv dataset we start with one on the form:
 
@@ -25,11 +25,11 @@ To optimise a .csv dataset we start with one on the form:
 
 In our case, we also added a leading character 'r: ' for repository and 'u: ' for user.
 
-## Output
+### Output
 
 This script outputs a .csv file with the evolved dataset in `/Datasets/` directory.
 
-## Usage
+### Usage
 
 `python evolution_run.py --input_file_path your_file_path --output_filename your_file_name`
 
@@ -44,11 +44,11 @@ Additional parameters:
 
 # load_dataset.py:
 
-## Input
+### Input
 
 This program loads a .csv dataset into a Gitlab server, it starts by reading file and the removing the leading 'r: ', 'u: ' characters from evolution_run.py
 
-## Usage
+### Usage
 
 `python load_dataset.py --input_file_path your_file_path --token your_file_name your_token`
 
