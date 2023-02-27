@@ -35,12 +35,12 @@ This script outputs a .csv file with the evolved dataset in `/Datasets/` directo
 
 Additional parameters:   
 `multiprocessing_units` enables multiprocessing.  Set a value for the number of cores in your machine.   
-`n_iter` Set the number of iterations for the evolutionary algorithm, default = 1000.  
-`mu` The number of parents selected each iteration, default = 1.   
-`lam` Size of the population, default = 20.   
-`A`  Mutation rate increase factor, default = 2.   
-`b`  Mutation rate decrease factor, default = 0.5.   
-`disable_progress_bar` Set to True if you want to disable the progress bar, default = False.
+`n_iter` Set the number of iterations for the evolutionary algorithm, default = `1000`.  
+`mu` The number of parents selected each iteration, default = `1`.   
+`lam` Size of the population, default = `20`.   
+`A`  Mutation rate increase factor, default = `2`.   
+`b`  Mutation rate decrease factor, default = `0.5`.   
+`disable_progress_bar` Set to True if you want to disable the progress bar, default = `False`.
 
 # load_dataset.py:
 
