@@ -9,7 +9,7 @@ from multiprocessing import Pool
 from itertools import combinations
 import time
 
-logging.basicConfig(filename='logfile_gt.log',
+logging.basicConfig(filename='evolution_run_logfile.log',
                     filemode='w', #open for exclusive creation, failing if the file already exists.
                     datefmt='%H:%M:%S,uuu',#'%d-%b-%y %H:%M:%S',
                     level=logging.INFO,

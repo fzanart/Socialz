@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import time
 from gitlab import Gitlab
@@ -11,7 +12,7 @@ from gitlab.exceptions import GitlabCreateError, GitlabGetError,GitlabListError,
 logging.basicConfig(level=logging.INFO,
                     format="{\"time\": \"'%(asctime)s'\", \"levelname\": \"%(levelname)s\", \"message\": \"%(message)s\"},",
                     #datefmt='%m/%d/%Y %I:%M:%S.%f %p',
-                    filename='log_file.log',
+                    filename='load_dataset_logfile.log',
                     filemode='w')
 class gitlab_flow():
     def __init__(self, host, token, corpus_path='corpus.txt', max_attemps=5, db_waiting_time=0.25, disable_progress_bar=False):
@@ -25,8 +26,10 @@ class gitlab_flow():
         self.progress_bar = disable_progress_bar
 
     def get_corpus(self, corpus_path):
+        script_dir = os.path.dirname(__file__)
+        abs_file_path = os.path.join(script_dir, corpus_path)
         # Read corpus to create random text titles, messages, body.
-        with open(corpus_path) as f:
+        with open(abs_file_path) as f:
             corpus = f.read().splitlines()
             return corpus
 
