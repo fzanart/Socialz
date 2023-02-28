@@ -6,10 +6,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from API.ES_src import evolutionary_strategy
 
-
 def main():
 
-    save_dir = './Datasets/'
+    save_dir = './Datasets'
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
@@ -31,8 +30,7 @@ def main():
     es = evolutionary_strategy(ds, cpus=args.multiprocessing_units)
     niter, best, best_eval = es.es_plus(args.n_iter, args.mu, args.lam, args.A, args.b, args.disable_progress_bar)
     
-    filename = os.path.splitext(args.input_file)[0] + '.csv'
-    save_path = os.path.join(save_dir, filename)
+    save_path = os.path.splitext(args.output_filename)[0] + '.csv'
     
     es.complete_edgelist(best).to_csv(save_path, index=False)
 
