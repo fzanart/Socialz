@@ -9,6 +9,8 @@ Francisco Zanartu, Christoph Treude, Markus Wagner
 > Paper:   
 https://arxiv.org/abs/2302.08664
 
+> A copy of the virtual machines of our project can be found on: https://zenodo.org/record/7686467#.ZAfZMi8RpmA
+
 This repository contains:
 - Relevant codes of our work   
 - Datasets
