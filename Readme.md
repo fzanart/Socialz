@@ -25,7 +25,7 @@ To optimise a .csv dataset we start with one on the form:
 
 | source | target | type |
 
-Note: In our case, we assumed no user-user connections (i.e. type == 'FollowEvent') in our original dataset, intead we create Follow Events by calculating cosine similarity between users. We assumed only users in the 'source' column and only repositories in the 'target' column. We also added a leading character 'r: ' for repository and 'u: ' for user.
+Note: In our case, we assumed no user-user connections (i.e. type == 'FollowEvent') in our original dataset, instead we create Follow Events by calculating cosine similarity between users. We assumed only users in the 'source' column and only repositories in the 'target' column. We also added a leading character 'r: ' for repository and 'u: ' for user.
 
 ### Output
 
