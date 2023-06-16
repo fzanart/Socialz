@@ -108,7 +108,7 @@ class gitlab_flow():
         # 4. if user can not commit/merge request, invite:
         if invite and user_name.username != repo_owner.username:
             if user_name.id not in [x.id for x in project.users.list(search=user_name.username, get_all=True)]:
-                invitation = project.invitations.create(json.loads(json.dumps({"user_id": user_name.id,"access_level": 40,})), sudo=repo_owner.id)
+                invitation = project.invitations.create(json.loads(json.dumps({"email": user_name.username+'@mail.com',"access_level": 40,})), sudo=repo_owner.id)
                 try:
                     while user_name.id not in [x.id for x in project.users.list(search=user_name.username)]:
                         time.sleep(self.db_waiting_time) # db needs some time before creating a project for a new user.
