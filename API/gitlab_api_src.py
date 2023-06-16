@@ -51,7 +51,7 @@ class gitlab_flow():
 
     def create_user(self, user_name):
         #Create a user
-        user_data = json.loads(json.dumps({'email': user_name+'@mail.com', 'username': user_name, 'name': user_name, 'reset_password':False, 'password':'password','skip_confirmation':True}))
+        user_data = json.loads(json.dumps({'email': user_name+'@mail.com', 'username': user_name, 'name': user_name, 'reset_password':False, 'password':'soci@lz-psw-2023','skip_confirmation':True}))
         try:
             return self.gl.users.create(user_data)
         except GitlabCreateError:
