@@ -124,8 +124,15 @@ class gitlab_flow():
 
     def create_commit(self, source, target, action='update'):
         # Create PushEvent, actions: create, delete, move, update, chmod
-        user_name, repo_owner, project = self.validate(source, target)   
-        branch = np.random.choice([branch.name for branch in project.branches.list(get_all=True)])
+        user_name, repo_owner, project = self.validate(source, target)
+        branch, timeout = None, 0
+        while not branch and timeout < 4:
+            branch_names = [branch.name for branch in project.branches.list(get_all=True)]
+            if branch_names:
+                branch = np.random.choice(branch_names)
+            else:
+                time.sleep(self.db_waiting_time)
+                timeout += 1
         commit_data = json.loads(json.dumps({'branch': branch,'commit_message': f'{self.title()}\n{self.message()}','actions': [{'action': action,'file_path': 'README.md','content': self.body()}]}))
         try: # Try commiting to a random branch.
             return project.commits.create(commit_data, sudo=user_name.id)
