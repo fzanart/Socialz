@@ -1,4 +1,5 @@
 import os
+import traceback
 import numpy as np
 import time
 from gitlab import Gitlab
@@ -7,7 +8,10 @@ import random
 import json
 import logging
 from tqdm import tqdm
-from gitlab.exceptions import GitlabCreateError, GitlabGetError,GitlabListError, GitlabHttpError       
+from gitlab.exceptions import GitlabCreateError, GitlabGetError,GitlabListError, GitlabHttpError
+
+random.seed(42)
+np.random.seed(42)
 
 logging.basicConfig(level=logging.INFO,
                     format="{\"time\": \"'%(asctime)s'\", \"levelname\": \"%(levelname)s\", \"message\": \"%(message)s\"},",
@@ -331,10 +335,11 @@ class gitlab_flow():
                         break
                 except Exception as e:
                     error = str(e)
+                    tb = traceback.format_exc()
                     pbar.set_description(f'Error on: {i} attempt: {attempt}')   
                     logging.warning(f'{i} {edge_list.loc[i,:]} {error}')
                     continue
                 break
             else:
-                logging.critical(f'{i} {error}')
+                logging.critical(f'{i} {edge_list.loc[i, 'type']} {error} {tb}')
         logging.info(f'Workflow endend')
