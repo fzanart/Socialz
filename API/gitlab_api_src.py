@@ -341,5 +341,5 @@ class gitlab_flow():
                     continue
                 break
             else:
-                logging.critical(f'{i} {edge_list.loc[i, 'type']} {error} {tb}')
+                logging.critical(f'{i} {edge_list.loc[i, "type"]} {error} {tb}')
         logging.info(f'Workflow endend')
