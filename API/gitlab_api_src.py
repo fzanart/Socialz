@@ -147,7 +147,7 @@ class gitlab_flow():
                     another_branch = np.random.choice([b.name for b in project.branches.list(get_all=True) if b.name != branch])
                     commit_data = json.loads(json.dumps({'branch': another_branch,'commit_message': f'{self.title()}\n{self.message()}','actions': [{'action': action,'file_path': 'README.md','content': self.body()}]}))
                     return project.commits.create(commit_data, sudo=user_name.id)
-                except GitlabCreateError:
+                except GitlabCreateError, ValueError:
                     time.sleep(self.db_waiting_time)
                     timeout += 1
                     continue
