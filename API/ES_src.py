@@ -25,6 +25,8 @@ class evolutionary_strategy():
         self.pool = Pool(self.cpus)
         self.event_types = edge_list['type'].unique().tolist()
         self.combinations = self.get_combinations()
+        self.total_nodes = len(self.users + self.repos)
+        self.prob_per_event = {event: 0.5 / (len(self.event_types) - 1) for event in self.event_types}
 
     def get_combinations(self):
         st = time.time()
@@ -44,18 +46,16 @@ class evolutionary_strategy():
         logging.debug(f'"def":"get_combinations", "elapsed_time":"{et-st}", "iter":"{self.iter_n}"')
         return comb_dict
 
-    def user_user_similarity(self, adj_matrix):
+    def user_user_similarity(self, repo_user, user_repo):
         st = time.time()
         # Evaluate user-user similarity:
         
         ## Get repo - user similarity (upper-right square):
-        repo_user = adj_matrix.iloc[:len(self.repos),len(self.repos):]
         repo_user = repo_user/np.linalg.norm(repo_user,axis=0,keepdims=True)
         repo_user[np.isnan(repo_user)] = 0
         repo_user = np.dot(repo_user.transpose(),repo_user)
 
         ## Get user - repo similarity (lower-left square):
-        user_repo = adj_matrix.iloc[len(self.repos):,:len(self.repos)]
         user_repo = user_repo/np.linalg.norm(user_repo,axis=1,keepdims=True)
         user_repo[np.isnan(user_repo)] = 0
         user_repo = np.dot(user_repo, user_repo.transpose())
@@ -70,70 +70,94 @@ class evolutionary_strategy():
         st = time.time()
         #Transform an adjacency matrix to edge list
         sources, targets = np.nonzero(adj_matrix.to_numpy())
-        adj_matrix = pd.DataFrame({'source':list(map(self.users.__getitem__, sources)), 'target':list(map(self.users.__getitem__, targets))})
+        weights = adj_matrix.to_numpy()[sources, targets]
+        edge_list = pd.DataFrame({'source':list(map(self.users.__getitem__, sources)), 
+                                  'target':list(map(self.users.__getitem__, targets)),
+                                  'weight': weights})
+        edge_list['type'] = 'FollowEvent'
         et = time.time()
         logging.debug(f'"def":"adjmatrix_to_edgelist", "elapsed_time":"{et-st}", "iter":"{self.iter_n}"')
+        return edge_list
+    
+    def edgelist_to_adjmatrix(self, edge_list):
+        st = time.time()
+        user_repo = edge_list.groupby(['source', 'target'])['target'].count().unstack(fill_value=0)
+        repo_user = user_repo.T
+        idx = user_repo.columns.union(user_repo.index)
+        adj_matrix = user_repo.reindex(index = idx, columns=idx, fill_value=0.0)
+        adj_matrix.update(repo_user)
+        et = time.time()
+        adj_matrix = pd.DataFrame(columns=self.users, index=self.users, data=self.user_user_similarity(repo_user=repo_user, user_repo=user_repo))
+        logging.debug(f'"def":"edgelist_to_adjmatrix", "elapsed_time":"{et-st}", "iter":"{self.iter_n}"')
         return adj_matrix
-    
-    
+
     def complete_edgelist(self, edge_list):
         st = time.time()
         # Add user-user FollowEvents based on cosine similarity
         # Remove followEvent if exists on the edge_list
         edge_list = edge_list.loc[edge_list['type'] != 'FollowEvent'].reset_index(drop=True)
-        
-        # Build the adjacency matrix for user - repo (and repo - user) interactions.
-        adj_matrix = pd.crosstab(edge_list['source'], edge_list['target']).astype(float)
-        idx = adj_matrix.columns.union(adj_matrix.index)
-        adj_matrix = adj_matrix.reindex(index = idx, columns=idx, fill_value=0.0)
         et = time.time()
-        adj_matrix.loc[self.users, self.users] = self.user_user_similarity(adj_matrix)
-        
+        # Build the user_user adjacency matrix
+        user_user_adj_matrix = self.edgelist_to_adjmatrix(edge_list)
         # Create edge list from user-user similarity:
-        user_user = adj_matrix.loc[self.users, self.users]
-        user_user = self.adjmatrix_to_edgelist(user_user)
+        user_user_edge_list = self.adjmatrix_to_edgelist(user_user_adj_matrix)
         t1 = et - st
         st = time.time()
-        user_user['type'] = 'FollowEvent'
-        
+        edge_list['weight'] = 2 # add a wight of 2 to each non follow event.
         # Append user_user edge list to edge_list:
-        edge_list = pd.concat([edge_list, user_user], ignore_index=True, axis=0)
+        edge_list = pd.concat([edge_list, user_user_edge_list], ignore_index=True, axis=0)
         et = time.time()
         logging.debug(f'"def":"complete_edgelist", "elapsed_time":"{et-st+t1}", "iter":"{self.iter_n}"')
         return edge_list
+    
+    def add(self, edge_list, add_node):
+
+        # initialise a dict with same prob for all events:
+        probs = self.prob_per_event.copy()
+
+        # update prob for least frequent event:
+        least_frequent_event = edge_list['type'].value_counts().idxmin()
+        probs[least_frequent_event] = 0.5
+
+        # generates a new set of random edges and appends them to the existing edge list.
+        d = {'source':np.random.choice(a=self.users, size=add_node, replace=True), 'target':np.random.choice(a=self.repos, size=add_node, replace=True), 'type':np.random.choice(a=self.event_types, size=add_node, replace=True, p=[probs[e] for e in self.event_types])}
+        el = pd.concat([edge_list, pd.DataFrame(d)], ignore_index=True, axis=0)
+        return el
+    
+    def delete(self, edge_list, del_nodes):
+        # Select from how many nodes I will be deleting edges:
+        nodes_to_delete = list(np.random.choice(a=self.users, size=del_nodes, replace=False))
+        print(nodes_to_delete)
+
+        # Select all posible edges to be deleted
+        mask = edge_list['source'].isin(nodes_to_delete)
+        source_nodes_to_delete = edge_list[mask]
+
+        # Exclude nodes without duplicated edges. (avoid deleting nodes)
+        edges_to_keep = source_nodes_to_delete.drop_duplicates(subset=['source'], keep=False).index 
+        source_nodes_to_delete = source_nodes_to_delete.drop(edges_to_keep)
+
+        if not source_nodes_to_delete.empty:
+            # From nodes with more than one edge, pick a random one to be deleted.
+            source_nodes_to_delete = source_nodes_to_delete.groupby('source',group_keys=True).apply(lambda x: x.sample(n=1)).index.get_level_values(1)
+            el = edge_list.drop(source_nodes_to_delete)
+            
+        else:
+            # Dont delete
+            el = edge_list.drop(source_nodes_to_delete.index)
+
+        return el.reset_index(drop=True)
 
     def mutate(self, edge_list, sample):
-        st = time.time()
-        # divide sample into the number of edges to add/remove
-        aux_1 = np.random.randint(0,sample+1)
-        aux_2 = sample - aux_1
-        add_node, delete_node = max(aux_1, aux_2), min(aux_1, aux_2)
 
-        # Remove existing followEvent on the edge_list, and/or create a copy
         el = edge_list.loc[edge_list['type'] != 'FollowEvent'].reset_index(drop=True).copy()
-        # Create random new edges and add them to the edge list.
-        d = {'source':np.random.choice(self.users, add_node), 'target':np.random.choice(self.repos, add_node), 'type':np.random.choice(self.event_types, add_node)}
-        el = pd.concat([el, pd.DataFrame(d)], ignore_index=True, axis=0)
+        choice = np.random.choice(['add', 'delete'], 1)
+        choice = ['add']
 
-        # Delete edges if delete_node > 0:
-        if delete_node > 0:
-            aux_el = None
-            # Check that removing edges dont remove users or repos.
-            timeout = time.time() + 60*2 # 2 minutes from now, max.
-            while aux_el is None or not len(aux_el['source'].unique()) == len(self.users) or not len(aux_el['target'].unique()) == len(self.repos):
-                if time.time() > timeout or delete_node == 0:
-                    #logging.warning(f'Delete nodes time exceeded, adding: {add_node}, deleting: {delete_node}')
-                    aux_el = el
-                    break
-                drop_idxs = np.random.choice(el.index, delete_node, replace=False)
-                aux_el = el.drop(drop_idxs).reset_index(drop=True)
-                delete_node -= 1 # shrink delete_node to find combination easily.
-            
-            el = aux_el
-        
-        et = time.time()
-        logging.debug(f'"def":"mutate", "elapsed_time":"{et-st}", "iter":"{self.iter_n}"')
-        return el
+        if choice[0] == 'add': 
+            return self.add(el, sample)
+        else: 
+            return self.delete(el, sample)
 
     def map_combinations(self, edge_list):
         st = time.time()
@@ -144,16 +168,28 @@ class evolutionary_strategy():
         et = time.time()
         logging.debug(f'"def":"map_combinations", "elapsed_time":"{et-st}", "iter":"{self.iter_n}"')
         return map_values
+    
+    # def rnd_choice_pivots(self, percentage):
+    #     # randomly chosen vertices, unbiased estimator, for betweenness centrality computation
+    #     size = len(self.users + self.repos)
+    #     pivots = np.random.choice(a=np.array(range(0,size+1)), size=int(size*percentage), replace=False)
+    #     return pivots
 
-    def graph_metrics(self, edge_list):
-        
-        # Evaluate Degree and Pagerank centralities for each node in a Graph
-        vertices = self.complete_edgelist(edge_list)
+    def graph_metrics(self, edge_list, weight=True, scale=True):
+        # Evaluate Degree and betweenness centralities for each node in the Graph
+        el = self.complete_edgelist(edge_list)
         st = time.time()
-        G = gt.Graph(directed=True)
-        vertices = G.add_edge_list(vertices[['source', 'target']].to_numpy(), hashed=True)
-        ranks = gt.pagerank(G)
-        d = [{'vertices':name, 'pagerank':ranks[vertex], 'degree':vertex.out_degree()+vertex.in_degree()} for vertex, name in zip(G.vertices(), vertices)]
+        g = gt.Graph(directed=True)
+        vertices = g.add_edge_list(el[['source', 'target']].to_numpy(), hashed=True)
+        if weight:
+            weights = g.new_edge_property('double')
+            g.edge_properties['weight'] = weights
+            weights.a = el['weight'].to_numpy()
+            r = gt.pagerank(g, weight=weights)
+        else:
+            r = gt.pagerank(g)
+
+        d = [{'vertices':name, 'pagerank':r[vertex], 'degree':vertex.out_degree()+vertex.in_degree()} for vertex, name in zip(g.vertices(), vertices)]
         result = pd.DataFrame(d).set_index('vertices')
  
         # filter users, concatenate with mapped values
@@ -165,7 +201,8 @@ class evolutionary_strategy():
         result = pd.concat([result, mapped_values], axis=1, ignore_index=False).rename(columns={0:'Values'})
         
         # Scale values
-        result = result.apply(lambda x:(x.astype(float) - min(x))/(max(x)-min(x)), axis = 0)
+        if scale:
+            result = result.apply(lambda x:(x.astype(float) - min(x))/(max(x)-min(x)), axis = 0).fillna(0)
 
         et = time.time()
         logging.debug(f'"def":"graph_metrics", "elapsed_time":"{et-st+t1}", "iter":"{self.iter_n}"')
@@ -185,7 +222,7 @@ class evolutionary_strategy():
         logging.info(f'ES({mu} + {lam}), start_time: {time.ctime()}')
         
         best, best_eval = None, 1e+10
-        n = self.edge_list.shape[0]
+        n = self.total_nodes
         prob = 1/n
         
         # calculate the number of children per parent
@@ -202,9 +239,7 @@ class evolutionary_strategy():
             # change iteration number (iter_n) for logging purposes.
             self.iter_n = epoch
             # sample from binomial distribution > 0
-            sample = np.random.binomial(n, prob)
-            if sample < 1: sample = 1 # set lower bound
-            pbar.set_description(f'best score: {best_eval:.5f}, step_size: {sample}, progress')           
+            sample = max(np.random.binomial(n, prob), 1)
             # evaluate the fitness for the population
             scores = self.pool.map(self.objective, population)
             # rank scores in ascending order
@@ -228,8 +263,9 @@ class evolutionary_strategy():
                     offspring.append(child)
             # replace population with children
             population = offspring
-            if count > 0: prob = min(prob*A, 1) #increase success prob when successful candidates were encountered
-            else: prob = max(prob*b, 0) # decrease prob.
+            if count > 0: prob = min(prob*A, 0.5) #increase success prob when successful candidates were encountered
+            else: prob = max(prob*b, 1/n**2) # decrease prob.
+            pbar.set_description(f'best score: {best_eval:.5f}, step_size: {sample}, progress')           
         et = time.time()
         logging.debug(f'"def":"es_plus", "elapsed_time":"{et-st}", "iter":"{self.iter_n}"')
         return niter, best, best_eval
