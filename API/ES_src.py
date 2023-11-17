@@ -8,6 +8,7 @@ import random
 from multiprocessing import Pool
 from itertools import combinations
 import time
+import warnings
 
 logging.basicConfig(filename='evolution_run_logfile.log',
                     filemode='w', #open for exclusive creation, failing if the file already exists.
@@ -18,7 +19,7 @@ class evolutionary_strategy():
 
     def __init__(self, edge_list, cpus=4):
         self.iter_n = 0
-        self.edge_list = edge_list
+        self.edge_list = self.validate_edge_list(edge_list)
         self.users = edge_list['source'].unique().tolist()
         self.repos = edge_list['target'].unique().tolist()
         self.cpus = cpus
@@ -27,6 +28,24 @@ class evolutionary_strategy():
         self.combinations = self.get_combinations()
         self.total_nodes = len(self.users + self.repos)
         self.prob_per_event = {event: 0.5 / (len(self.event_types) - 1) for event in self.event_types}
+
+    def validate_edge_list(self, edge_list):
+
+        ALLOWED_EVENT_TYPES = ['PushEvent', 'ForkEvent', 'WatchEvent', 'PullRequestEvent']
+        EXPECTED_COLUMNS = ['source', 'target', 'type']
+
+        # Check if edge_list has exactly 3 columns named 'source', 'target', 'type'
+        if len(edge_list.columns) != 3 and not all(col in edge_list.columns for col in EXPECTED_COLUMNS):
+            raise ValueError("The edge_list must contain exactly 3 columns: ['source', 'target', 'type']")
+        
+        # Filter rows with types other than allowed types
+        invalid_types = edge_list[~edge_list['type'].isin(ALLOWED_EVENT_TYPES)]
+        if not invalid_types.empty:
+            filtered_types = invalid_types['type'].unique().tolist()
+            warnings.warn(f"Filtered out invalid event types: {str(filtered_types)}")
+            return edge_list[edge_list['type'].isin(ALLOWED_EVENT_TYPES)].copy()
+        else:
+            return edge_list
 
     def get_combinations(self):
         st = time.time()
