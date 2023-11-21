@@ -98,9 +98,18 @@ class evolutionary_strategy():
         logging.debug(f'"def":"adjmatrix_to_edgelist", "elapsed_time":"{et-st}", "iter":"{self.iter_n}"')
         return edge_list
     
+    def get_adj_matrix(self, edge_list):
+        source_codes, source_uniques = pd.factorize(edge_list["source"])
+        target_codes, target_uniques = pd.factorize(edge_list["target"])
+
+        out = np.zeros((len(source_uniques), len(target_uniques)), dtype=np.int32)
+        np.add.at(out, (source_codes, target_codes), 1)
+
+        return pd.DataFrame(out, index=source_uniques, columns=target_uniques, copy=False)
+    
     def edgelist_to_adjmatrix(self, edge_list):
         st = time.time()
-        user_repo = edge_list.groupby(['source', 'target'])['target'].count().unstack(fill_value=0)
+        user_repo = self.get_adj_matrix(edge_list)
         repo_user = user_repo.T
         idx = user_repo.columns.union(user_repo.index)
         adj_matrix = user_repo.reindex(index = idx, columns=idx, fill_value=0.0)
