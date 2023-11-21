@@ -98,9 +98,18 @@ class evolutionary_strategy():
         logging.debug(f'"def":"adjmatrix_to_edgelist", "elapsed_time":"{et-st}", "iter":"{self.iter_n}"')
         return edge_list
     
+    def get_adj_matrix(self, edge_list):
+        source_codes, source_uniques = pd.factorize(edge_list["source"])
+        target_codes, target_uniques = pd.factorize(edge_list["target"])
+
+        out = np.zeros((len(source_uniques), len(target_uniques)), dtype=np.int32)
+        np.add.at(out, (source_codes, target_codes), 1)
+
+        return pd.DataFrame(out, index=source_uniques, columns=target_uniques, copy=False)
+    
     def edgelist_to_adjmatrix(self, edge_list):
         st = time.time()
-        user_repo = edge_list.groupby(['source', 'target'])['target'].count().unstack(fill_value=0)
+        user_repo = self.get_adj_matrix(edge_list)
         repo_user = user_repo.T
         idx = user_repo.columns.union(user_repo.index)
         adj_matrix = user_repo.reindex(index = idx, columns=idx, fill_value=0.0)
@@ -187,12 +196,6 @@ class evolutionary_strategy():
         et = time.time()
         logging.debug(f'"def":"map_combinations", "elapsed_time":"{et-st}", "iter":"{self.iter_n}"')
         return map_values
-    
-    # def rnd_choice_pivots(self, percentage):
-    #     # randomly chosen vertices, unbiased estimator, for betweenness centrality computation
-    #     size = len(self.users + self.repos)
-    #     pivots = np.random.choice(a=np.array(range(0,size+1)), size=int(size*percentage), replace=False)
-    #     return pivots
 
     def graph_metrics(self, edge_list, weight=True, scale=True):
         # Evaluate Degree and betweenness centralities for each node in the Graph
