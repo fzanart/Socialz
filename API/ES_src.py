@@ -187,12 +187,6 @@ class evolutionary_strategy():
         et = time.time()
         logging.debug(f'"def":"map_combinations", "elapsed_time":"{et-st}", "iter":"{self.iter_n}"')
         return map_values
-    
-    # def rnd_choice_pivots(self, percentage):
-    #     # randomly chosen vertices, unbiased estimator, for betweenness centrality computation
-    #     size = len(self.users + self.repos)
-    #     pivots = np.random.choice(a=np.array(range(0,size+1)), size=int(size*percentage), replace=False)
-    #     return pivots
 
     def graph_metrics(self, edge_list, weight=True, scale=True):
         # Evaluate Degree and betweenness centralities for each node in the Graph
