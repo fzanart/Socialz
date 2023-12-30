@@ -19,9 +19,7 @@ class evolutionary_strategy():
 
     def __init__(self, edge_list, cpus=4):
         self.iter_n = 0
-        self.edge_list = self.validate_edge_list(edge_list)
-        self.users = edge_list['source'].unique().tolist()
-        self.repos = edge_list['target'].unique().tolist()
+        self.validate_edge_list(edge_list)
         self.cpus = cpus
         self.pool = Pool(self.cpus)
         self.event_types = edge_list['type'].unique().tolist()
@@ -43,9 +41,13 @@ class evolutionary_strategy():
         if not invalid_types.empty:
             filtered_types = invalid_types['type'].unique().tolist()
             warnings.warn(f"Filtered out invalid event types: {str(filtered_types)}")
-            return edge_list[edge_list['type'].isin(ALLOWED_EVENT_TYPES)].copy()
+            self.edge_list = edge_list[edge_list['type'].isin(ALLOWED_EVENT_TYPES)].copy()
+            self.users = self.edge_list['source'].unique().tolist()
+            self.repos = self.edge_list['target'].unique().tolist()
         else:
-            return edge_list
+            self.edge_lis = edge_list            
+            self.users = self.edge_list['source'].unique().tolist()
+            self.repos = self.edge_list['target'].unique().tolist()
 
     def get_combinations(self):
         st = time.time()
@@ -171,7 +173,7 @@ class evolutionary_strategy():
 
         el = edge_list.loc[edge_list['type'] != 'FollowEvent'].reset_index(drop=True).copy()
         choice = np.random.choice(['add', 'delete'], 1)
-        choice = ['add']
+        # choice = ['add']
 
         if choice[0] == 'add': 
             return self.add(el, sample)
