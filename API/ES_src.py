@@ -148,7 +148,7 @@ class evolutionary_strategy():
     def delete(self, edge_list, del_nodes):
         # Select from how many nodes I will be deleting edges:
         nodes_to_delete = list(np.random.choice(a=self.users, size=del_nodes, replace=False))
-        print(nodes_to_delete)
+        # print(nodes_to_delete)
 
         # Select all posible edges to be deleted
         mask = edge_list['source'].isin(nodes_to_delete)
