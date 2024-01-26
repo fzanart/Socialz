@@ -2,7 +2,7 @@ import argparse
 import pandas as pd
 import matplotlib.pyplot as plt
 from API.gitlabAPI import GitlabAPI
-from Results import SuccessRate, PrometheusResuts
+from API.Results import SuccessRate, PrometheusResuts
 
 
 def main():
