@@ -370,7 +370,7 @@ class GitlabAPI:
             project_id=repo_data.get("id"), branch=branch, user=user
         )  # TODO: try/except if error: commit into another branch
 
-    def create_fork(self, source: str, target: str):
+    def create_fork(self, source: str, target: str, max_atttemps=5):
         self.validate(source, target, repo=True, invite=False)
         project_id = self.target_repo_data.get("id")
         try:
@@ -379,7 +379,7 @@ class GitlabAPI:
             logging.debug("project already forked, trying different name")
             attempt = 0
             project_name = self.target_repo_data.get("name")
-            while True:
+            while attempt < max_atttemps:
                 try:
                     self.fork(
                         project_id,
