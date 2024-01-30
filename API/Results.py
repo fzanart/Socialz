@@ -156,33 +156,6 @@ class PrometheusResuts:
         else:
             return p.query_range(METRICS[metric], it, et, step)
 
-        # if metric == 'cpu':
-        #     return p.query_range('max(max_over_time(gitlab_sli:gitlab_service_saturation:ratio{component="cpu"}[1m]))',
-        #             it,
-        #             et,
-        #             step).mean().iloc[0]
-        # if metric == 'latency':
-        #     return p.query_range('sum by (instance) (rate(nginx_vts_upstream_request_seconds_total{instance="localhost:8060"}[1m])) \
-        #             /sum by (instance) (rate(nginx_vts_upstream_requests_total{instance="localhost:8060"}[1m]))',
-        #             it,
-        #             et,
-        #             step).mean().iloc[0]
-
-        # if metric == 'memory':
-        #     return p.query_range('clamp_min(clamp_max(1 -((node_memory_MemFree_bytes{instance="localhost:9100"} \
-        #             + node_memory_Buffers_bytes{instance="localhost:9100"} \
-        #             + node_memory_Cached_bytes{instance="localhost:9100"}))\
-        #             /node_memory_MemTotal_bytes{instance="localhost:9100"},1),0)',
-        #             it,
-        #             et,
-        #             step).mean().iloc[0]
-
-        # if metric == 'rps':
-        #     return p.query_range('max(avg_over_time(gitlab_sli:code_method_route:workhorse_http_request_count:rate1m[1m]))',
-        #                         it,
-        #                         et,
-        #                         step).mean().iloc[0]
-
     def query_db(self, input_path, output_path):
         # join query into a unique df and export it as csv
         p = query.Prometheus("http://localhost:9090")
@@ -225,7 +198,7 @@ class PrometheusResuts:
             df.iloc[-1, df.columns.get_loc("finish")],
         )
 
-        for metric in ["cpu", "latency", "memory", "cpu"]:
+        for metric in ["cpu", "latency", "memory", "rps"]:
             ds = self.select_query(
                 p=p, metric=metric, init=init, endt=endt, step=60, avg=False
             )
@@ -258,7 +231,7 @@ class ExpandDataset:
         delta_non_follow_events = evo[3] - ori[3]
         delta_follow_events = (
             evo[2] - ori[2]
-        )  # TODO: should be equal to evolved followevents
+        )  # NOTE: should be equal to evolved followevents
 
         users = list(
             set(
@@ -306,7 +279,7 @@ class ExpandDataset:
 
         ran = pd.concat(
             [ori[0], ran_non_follow_events, ran_follow_events], ignore_index=True
-        )  # TODO: ori should exclude followevents
+        )  # NOTE: ori should exclude followevents
 
         return ran
 
@@ -336,6 +309,6 @@ class ExpandDataset:
         # concat data
         sim = pd.concat(
             [ori[0], ori_non_follow_events, ori_follow_events], ignore_index=True
-        )  # TODO: ori should exclude followevents
+        )  # NOTE: ori should exclude followevents
 
         return sim
