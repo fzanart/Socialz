@@ -152,7 +152,10 @@ class PrometheusResuts:
         }
 
         if avg:
-            return p.query_range(METRICS[metric], it, et, step).mean().iloc[0]
+            try:
+                return p.query_range(METRICS[metric], it, et, step).mean().iloc[0]
+            except:
+                return 0.0
         else:
             return p.query_range(METRICS[metric], it, et, step)
 
