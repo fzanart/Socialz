@@ -1,15 +1,14 @@
 # Socialz: Multi-Feature Social Fuzz Testing
 
 > Abstract:   
-Online social networks have become an integral aspect of our daily lives and play a crucial role in shaping our relationships with others. However, bugs and glitches, even minor ones, can cause anything from frustrating problems to serious data leaks that can have far-reaching impacts on millions of users. To mitigate these risks, fuzz testing, a method of testing with randomised inputs, can provide increased confidence in the correct functioning of a social network. However, implementing traditional fuzz testing methods can be prohibitively difficult or impractical for programmers outside of the network's development team. To tackle this challenge, we present Socialz, a novel approach to social fuzz testing that (1) characterises real users of a social network, (2) diversifies their interaction using evolutionary computation across multiple, non-trivial features, and (3) collects performance data as these interactions are executed. With Socialz, we aim to provide anyone with the capability to perform comprehensive social testing, thereby improving the reliability and security of online social networks used around the world. 
+Online social networks have become an integral aspect of our daily lives and play a crucial role in shaping our relationships with others. However, bugs and glitches, even minor ones, can cause anything from frustrating problems to serious data leaks that can have far-reaching impacts on millions of users.
+To mitigate these risks, fuzz testing, a method of testing with randomised inputs, can provide increased confidence in the correct functioning of a social network. However, implementing traditional fuzz testing methods can be prohibitively difficult or impractical for programmers outside of the social network's development team. To tackle this challenge, we present Socialz, a novel approach to social fuzz testing that (1) characterises real users of a social network, (2) diversifies their interaction using evolutionary computation across multiple, non-trivial features, and (3) collects performance data as these interactions are executed. With Socialz, we aim to put social testing tools in everybody’s hands, thereby improving the reliability and security of social networks used worldwide. In our study, we came across (1) one known limitation of the current GitLab CE and (2) 6,907 errors, of which 40.16% are beyond our debugging skills.
 
 > Authors:   
 Francisco Zanartu, Christoph Treude, Markus Wagner  
 
 > Paper:   
 https://arxiv.org/abs/2302.08664
-
-> A copy of the virtual machines of our project can be found on: https://zenodo.org/record/7686467#.ZAfZMi8RpmA
 
 This repository contains:
 - Relevant codes of our work   
